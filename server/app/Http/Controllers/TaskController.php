@@ -12,7 +12,8 @@ class TaskController extends Controller
      */
     public function index()
     {
-        return Task::all();
+        $tasks = Task::all();
+        return response()->json($tasks);
     }
 
     /**
@@ -28,7 +29,10 @@ class TaskController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate(['title' => 'required|string|min:3|max:255', 'completed' => 'boolean']);
+        $task = Task::create([ 'title' => $validated['title'], 'completed' => $validated['completed'] ?? false,
+        ]);
+        return response()->json($task, 201);
     }
 
     /**
@@ -50,16 +54,46 @@ class TaskController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Task $task)
-    {
-        //
-    }
+    public function update(Request $request, $id)
+{
+
+    $validated = $request->validate([
+        'title' => 'required|string|min:3|max:255',
+        'completed' => 'boolean',
+    ]);
+
+    $task = Task::findOrFail($id);
+
+    $task->update([
+        'title' => $validated['title'],
+        'completed' => $validated['completed']
+    ]);
+
+    return response()->json($task);
+}
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Task $task)
-    {
-        //
-    }
+    public function destroy($id)
+{
+    $task = Task::findOrFail($id);
+
+    $task->delete();
+
+    return response()->json([
+        'message' => 'Task deleted successfully'
+    ]);
+}
+
+    public function toggle($id)
+{
+    $task = Task::findOrFail($id);
+
+    $task->completed = !$task->completed;
+
+    $task->save();
+
+    return response()->json($task);
+}
 }
