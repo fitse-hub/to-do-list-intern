@@ -1,0 +1,243 @@
+{
+  "navigation": {
+    "dashboard": "ዳሽቦርድ",
+    "projects": "ፕሮጀክቶች",
+    "tasks": "ተግባራት",
+    "reports": "ሪፖርቶች",
+    "settings": "ቅንብሮች",
+    "profile": "መገለጫ",
+    "logout": "ውጣ"
+  },
+  "dashboard": {
+    "greeting": {
+      "morning": "እንደምን አደሩ",
+      "afternoon": "እንደምን ዋሉ",
+      "evening": "እንደምን አመሹ"
+    },
+    "hero_subtitle": "በአግባቡ ይደራጁ፣ ውጤታማ ይሁኑ።",
+    "stats": {
+      "total_tasks": "አጠቃላይ ተግባራት",
+      "completed": "የተጠናቀቁ",
+      "todo": "የሚሰሩ",
+      "failed": "ያልተሳኩ"
+    },
+    "sections": {
+      "tasks_by_category": "ተግባራት በምድብ",
+      "recent_tasks": "የቅርብ ጊዜ ተግባራት",
+      "category_performance": "የምድብ አፈጻጸም",
+      "status_distribution": "የሁኔታ ስርጭት",
+      "productivity_trend": "የውጤታማነት አዝማሚያ"
+    },
+    "empty": {
+      "no_tasks": "ምንም ተግባር የለም",
+      "category_desc": "የእርስዎ ተግባራት በምድብ እዚህ ይታያሉ።",
+      "recent_desc": "የእርስዎ የቅርብ ጊዜ ተግባራት እዚህ ይታያሉ።"
+    },
+    "view_all": "ሁሉንም እይ",
+    "chart_labels": {
+      "completed": "የተጠናቀቁ",
+      "failed": "ያልተሳኩ",
+      "todo": "የሚሰሩ",
+      "created": "የተፈጠሩ"
+    }
+  },
+  "tasks": {
+    "stats": {
+      "all": "ሁሉም ተግባራት",
+      "all_sub": "ሁሉንም ተግባራት እይ",
+      "completed": "የተጠናቀቁ",
+      "completed_sub": "የተጠናቀቁ ተግባራት",
+      "todo": "የሚሰሩ",
+      "todo_sub": "የሚሰሩ ተግባራት",
+      "overdue": "ያለፈባቸው",
+      "overdue_sub": "ጊዜያቸው ያለፈባቸው"
+    },
+    "filters": {
+      "search_placeholder": "ተግባራትን በስም ወይም በምድብ ፈልግ...",
+      "title": "ማጣሪያዎች",
+      "view": "እይታ",
+      "list_view": "ዝርዝር እይታ",
+      "grid_view": "ግሪድ እይታ",
+      "status": "ሁኔታ",
+      "all_statuses": "ሁሉም ሁኔታዎች",
+      "category": "ምድብ",
+      "all_categories": "ሁሉም ምድቦች",
+      "priority": "ቅድሚያ",
+      "all_priorities": "ሁሉም ቅድሚያዎች",
+      "date": "ቀን",
+      "all_time": "ሁሉም ጊዜ",
+      "today": "ዛሬ",
+      "this_week": "በዚህ ሳምንት",
+      "sort_by": "አደራደር",
+      "due_date": "የማለቂያ ቀን",
+      "reset": "እንደገና አስጀምር"
+    },
+    "list": {
+      "loading": "ተግባራትን በመጫን ላይ...",
+      "no_tasks": "ምንም ተግባር አልተገኘም::",
+      "no_tasks_sub": "አዲስ ተግባር ለመጨመር የ + ቁልፍን ይጫኑ::",
+      "groups": {
+        "overdue": "ያለፈባቸው",
+        "today": "ዛሬ",
+        "upcoming": "የሚመጡ",
+        "completed": "የተጠናቀቁ",
+        "high_priority": "ከፍተኛ ቅድሚያ",
+        "medium_priority": "መካከለኛ ቅድሚያ",
+        "low_priority": "ዝቅተኛ ቅድሚያ",
+        "no_priority": "ቅድሚያ የሌላቸው"
+      }
+    },
+    "item": {
+      "today": "ዛሬ",
+      "tomorrow": "ነገ",
+      "start": "መጀመሪያ",
+      "due": "ማለቂያ",
+      "edit": "ተግባር አስተካክል",
+      "delete": "ተግባር ሰርዝ",
+      "actions": "እርምጃዎች"
+    },
+    "modal": {
+      "create_title": "አዲስ ተግባር ፍጠር",
+      "edit_title": "ተግባር አስተካክል",
+      "title_label": "ርዕስ",
+      "title_placeholder": "ለምሳሌ ፕሮጀክት መጨረስ",
+      "category_label": "ምድብ",
+      "select_category": "ምድብ ይምረጡ",
+      "priority_label": "ቅድሚያ",
+      "select_priority": "ቅድሚያ ይምረጡ",
+      "start_date": "የመጀመሪያ ቀን እና ሰዓት",
+      "due_date": "የማለቂያ ቀን እና ሰዓት",
+      "description": "መግለጫ",
+      "desc_placeholder": "ዝርዝሮችን ያክሉ...",
+      "btn_create": "ተግባር ፍጠር",
+      "btn_creating": "በመፍጠር ላይ...",
+      "btn_update": "ተግባር አዘምን",
+      "btn_updating": "በማዘመን ላይ...",
+      "btn_cancel": "ሰርዝ",
+      "new_category": "አዲስ ምድብ",
+      "edit_category": "ምድብ አስተካክል",
+      "cat_name_placeholder": "የምድብ ስም ያስገቡ",
+      "btn_add": "አክል",
+      "btn_adding": "በማከል ላይ..."
+    },
+    "priority": {
+      "high": "ከፍተኛ",
+      "medium": "መካከለኛ",
+      "low": "ዝቅተኛ"
+    }
+  },
+  "reports": {
+    "hero_title": "የውጤታማነት ሪፖርቶች",
+    "hero_subtitle": "እድገትዎን ይተንትኑ እና ግቦችዎን ይከታተሉ።",
+    "filters": {
+      "all_time": "ሁሉም ጊዜ",
+      "today": "ዛሬ",
+      "this_week": "በዚህ ሳምንት",
+      "this_month": "በዚህ ወር",
+      "custom_range": "የተወሰነ ጊዜ",
+      "all_categories": "ሁሉም ምድቦች",
+      "apply": "ተግብር"
+    },
+    "stats": {
+      "total_tasks": "አጠቃላይ ተግባራት",
+      "completed": "የተጠናቀቁ",
+      "failure_rate": "የውድቀት መጠን",
+      "productivity_score": "የውጤታማነት ነጥብ"
+    },
+    "charts": {
+      "category_performance": "የምድብ አፈጻጸም",
+      "status_distribution": "የሁኔታ ስርጭት",
+      "productivity_trend": "የውጤታማነት አዝማሚያ",
+      "labels": {
+        "completed": "የተጠናቀቁ",
+        "failed": "ያልተሳኩ",
+        "todo": "የሚሰሩ",
+        "created": "የተፈጠሩ",
+        "remaining": "የቀሩ"
+      }
+    },
+    "insights": {
+      "title": "ግንዛቤዎች እና ተከታታይ ውጤቶች",
+      "current_streak": "የአሁኑ ተከታታይ",
+      "days": "ቀናት",
+      "top_category": "ዋና ምድብ",
+      "best_day": "ምርጥ ቀን",
+      "none": "ምንም",
+      "heatmap_title": "የማጠናቀቂያ ካርታ (ያለፉት 30 ቀናት)",
+      "less": "ጥቂት",
+      "more": "ብዙ"
+    }
+  },
+  "profile": {
+    "title": "የእኔ ገጽ",
+    "plan_badge": "ነፃ እቅድ",
+    "edit_profile_btn": "መገለጫ አርትዕ",
+    "stats": {
+      "total_tasks": "አጠቃላይ ተግባራት",
+      "completed": "የተጠናቀቁ",
+      "todo": "የሚሰሩ",
+      "overdue": "ያለፈባቸው"
+    },
+    "account": {
+      "title": "መለያ",
+      "edit_profile": "መገለጫ አርትዕ",
+      "edit_profile_desc": "የግል መረጃዎን ያዘምኑ",
+      "change_password": "የይለፍ ቃል ይቀይሩ",
+      "change_password_desc": "የመለያዎን የይለፍ ቃል ያዘምኑ",
+      "theme": "ገጽታ",
+      "theme_desc": "የሚመርጡትን ገጽታ ይምረጡ"
+    },
+    "preferences": {
+      "title": "ምርጫዎች",
+      "notifications": "ማሳወቂያዎች",
+      "notifications_desc": "የማሳወቂያ ምርጫዎችዎን ያስተዳድሩ",
+      "task_settings": "የተግባር ቅንብሮች",
+      "task_settings_desc": "ነባሪ የተግባር ምርጫዎችን ያዘጋጁ",
+      "privacy_security": "ግላዊነት እና ደህንነት",
+      "privacy_security_desc": "ግላዊነትዎን እና ደህንነትዎን ያስተዳድሩ"
+    },
+    "sidebar": {
+      "reports_title": "ሪፖርቶች",
+      "tasks_overview": "የተግባሮች አጠቃላይ እይታ",
+      "total": "አጠቃላይ",
+      "tasks_by_category": "ተግባራት በምድብ",
+      "completion_rate": "የማጠናቀቂያ መጠን",
+      "msg_great": "በጣም ጥሩ እየሰሩ ነው!",
+      "msg_push": "ይቀጥሉ!",
+      "msg_completed": "ከ {total} ተግባራት ውስጥ {comp} አጠናቀዋል።",
+      "productivity_trend": "የውጤታማነት አዝማሚያ",
+      "view_full_report": "ሙሉ ሪፖርት ይመልከቱ"
+    },
+    "modal": {
+      "success_msg": "መገለጫ በተሳካ ሁኔታ ተዘምኗል!",
+      "edit_profile": "መገለጫ አርትዕ",
+      "full_name": "ሙሉ ስም *",
+      "change_password": "የይለፍ ቃል ይቀይሩ",
+      "leave_blank": "የይለፍ ቃልዎን መቀየር ካልፈለጉ ባዶ ይተዉት።",
+      "current_password": "የአሁኑ የይለፍ ቃል",
+      "new_password": "አዲስ የይለፍ ቃል",
+      "confirm_password": "የይለፍ ቃል ያረጋግጡ",
+      "saving": "በማስቀመጥ ላይ...",
+      "update_btn": "መገለጫ አዘምን"
+    }
+  },
+  "buttons": {
+    "save": "አስቀምጥ",
+    "cancel": "ሰርዝ",
+    "edit": "አስተካክል",
+    "delete": "ሰርዝ",
+    "add": "አክል",
+    "create": "ፍጠር"
+  },
+  "forms": {
+    "email": "ኢሜይል",
+    "password": "የይለፍ ቃል",
+    "submit": "አስገባ"
+  },
+  "common": {
+    "loading": "በመጫን ላይ...",
+    "error": "ስህተት ተከስቷል",
+    "success": "ተሳክቷል",
+    "language": "ቋንቋ"
+  }
+}
