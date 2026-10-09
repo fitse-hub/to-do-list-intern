@@ -136,8 +136,8 @@ const stats = computed(() => {
 }
 
 .todo-stat-card {
-  background: white;
-  border: 1px solid #F0F0F0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-light);
   border-radius: 16px;
   padding: 20px 24px;
   display: flex;
@@ -162,15 +162,15 @@ const stats = computed(() => {
   height: 28px;
 }
 
-.blue-icon  { background: #EFF6FF; color: #3B82F6; }
-.green-icon { background: #ECFDF5; color: #10B981; }
-.orange-icon{ background: #FFF7ED; color: #F97316; }
-.purple-icon{ background: #FAF5FF; color: #A855F7; }
+.blue-icon  { background: var(--stat-blue-bg); color: var(--stat-blue-text); }
+.green-icon { background: var(--stat-green-bg); color: var(--stat-green-text); }
+.orange-icon{ background: var(--stat-orange-bg); color: var(--stat-orange-text); }
+.purple-icon{ background: var(--stat-purple-bg); color: var(--stat-purple-text); }
 
-.blue-text  { color: #3B82F6; }
-.green-text { color: #10B981; }
-.orange-text{ color: #F97316; }
-.purple-text{ color: #A855F7; }
+.blue-text  { color: var(--stat-blue-text); }
+.green-text { color: var(--stat-green-text); }
+.orange-text{ color: var(--stat-orange-text); }
+.purple-text{ color: var(--stat-purple-text); }
 
 .todo-stat-body {
   display: flex;
@@ -181,7 +181,7 @@ const stats = computed(() => {
 .todo-stat-label {
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-dark);
 }
 
 .todo-stat-value {
@@ -192,7 +192,7 @@ const stats = computed(() => {
 
 .todo-stat-sub {
   font-size: 12px;
-  color: #9CA3AF;
+  color: var(--text-muted);
   font-weight: 400;
   margin-top: 4px;
 }
@@ -206,7 +206,7 @@ const stats = computed(() => {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background-color: #3B82F6;
+  background-color: var(--primary);
   color: white;
   border: none;
   box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4);

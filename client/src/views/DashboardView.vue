@@ -74,10 +74,10 @@ const recentTasks = computed(() => {
 })
 
 const categoryColors = {
-  General:  { bg: '#EFF6FF', color: '#1D4ED8' },
-  Work:     { bg: '#FEF9C3', color: '#854D0E' },
-  Personal: { bg: '#F0FDF4', color: '#15803D' },
-  Urgent:   { bg: '#FEF2F2', color: '#B91C1C' },
+  General:  { bg: 'var(--stat-blue-bg)', color: 'var(--stat-blue-text)' },
+  Work:     { bg: 'var(--stat-yellow-bg)', color: 'var(--stat-yellow-text)' },
+  Personal: { bg: 'var(--stat-green-bg)', color: 'var(--stat-green-text)' },
+  Urgent:   { bg: 'var(--stat-red-bg)', color: 'var(--stat-red-text)' },
 }
 const getCategoryStyle = (cat) => {
   const c = categoryColors[cat] || categoryColors['General']
@@ -268,8 +268,8 @@ const chartOptions = {
       <template v-else>
       <div class="stat-card" style="--curve-color: rgba(59, 130, 246, 0.05);">
         <div class="stat-top">
-          <div class="stat-icon-wrap" style="background: #EFF6FF;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="#3B82F6" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+          <div class="stat-icon-wrap bg-blue-soft text-blue">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
           </div>
           <button class="menu-dots"><svg fill="currentColor" viewBox="0 0 20 20" width="16"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"/></svg></button>
         </div>
@@ -281,40 +281,40 @@ const chartOptions = {
 
       <div class="stat-card" style="--curve-color: rgba(34, 197, 94, 0.05);">
         <div class="stat-top">
-          <div class="stat-icon-wrap" style="background: #F0FDF4;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="#22C55E" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <div class="stat-icon-wrap bg-green-soft text-green">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
           <button class="menu-dots"><svg fill="currentColor" viewBox="0 0 20 20" width="16"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"/></svg></button>
         </div>
         <div class="stat-info">
           <span class="stat-label">{{ t('dashboard.stats.completed') }}</span>
-          <span class="stat-value" style="color: #22C55E;">{{ completed }}</span>
+          <span class="stat-value text-green">{{ completed }}</span>
         </div>
       </div>
 
       <div class="stat-card" style="--curve-color: rgba(239, 68, 68, 0.05);">
         <div class="stat-top">
-          <div class="stat-icon-wrap" style="background: #FEF2F2;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="#EF4444" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <div class="stat-icon-wrap bg-red-soft text-red">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
           <button class="menu-dots"><svg fill="currentColor" viewBox="0 0 20 20" width="16"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"/></svg></button>
         </div>
         <div class="stat-info">
           <span class="stat-label">{{ t('dashboard.stats.todo') }}</span>
-          <span class="stat-value" style="color: #EF4444;">{{ todo }}</span>
+          <span class="stat-value text-red">{{ todo }}</span>
         </div>
       </div>
 
       <div class="stat-card" style="--curve-color: rgba(234, 179, 8, 0.05);">
         <div class="stat-top">
-          <div class="stat-icon-wrap" style="background: #FEF9C3;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="#EAB308" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <div class="stat-icon-wrap bg-yellow-soft text-yellow">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
           <button class="menu-dots"><svg fill="currentColor" viewBox="0 0 20 20" width="16"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"/></svg></button>
         </div>
         <div class="stat-info">
           <span class="stat-label">{{ t('dashboard.stats.failed') }}</span>
-          <span class="stat-value" style="color: #DC2626;">{{ failed }}</span>
+          <span class="stat-value text-red">{{ failed }}</span>
         </div>
       </div>
       </template>
@@ -325,7 +325,7 @@ const chartOptions = {
       <div class="dash-card">
         <div class="dash-card-header">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div class="card-icon" style="background: #F3E8FF; color: #9333EA;">
+            <div class="card-icon bg-purple-soft text-purple">
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
             </div>
             <h3 class="dash-card-title">{{ t('dashboard.sections.tasks_by_category') }}</h3>
@@ -358,7 +358,7 @@ const chartOptions = {
           <div v-for="cat in byCategory" :key="cat.name" class="cat-row">
             <span class="category-badge" :style="getCategoryStyle(cat.name)">{{ cat.name }}</span>
             <div class="cat-bar-wrap">
-              <div class="cat-bar" :style="`width: ${total > 0 ? (cat.count / total * 100) : 0}%; background: #3B82F6;`"></div>
+              <div class="cat-bar bg-blue-soft" :style="`width: ${total > 0 ? (cat.count / total * 100) : 0}%; background: var(--stat-blue-text);`"></div>
             </div>
             <span class="cat-count">{{ cat.count }}</span>
           </div>
@@ -369,7 +369,7 @@ const chartOptions = {
       <div class="dash-card">
         <div class="dash-card-header">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div class="card-icon" style="background: #F3E8FF; color: #9333EA;">
+            <div class="card-icon bg-purple-soft text-purple">
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
             <h3 class="dash-card-title">{{ t('dashboard.sections.recent_tasks') }}</h3>

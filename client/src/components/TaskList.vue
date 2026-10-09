@@ -3,12 +3,18 @@ import { ref, computed, onMounted } from 'vue'
 import { useTaskStore } from '@/stores/taskStore'
 import { useCategoryStore } from '@/stores/categoryStore'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import TaskItem from './TaskItem.vue'
 import SkeletonLoader from './common/SkeletonLoader.vue'
 
 const { t } = useI18n()
+const router = useRouter()
 const store = useTaskStore()
 const categoryStore = useCategoryStore()
+
+function goToCalendar() {
+  router.push('/calendar')
+}
 
 const searchQuery = ref('')
 const filterStatus = ref('All Statuses')
@@ -35,6 +41,19 @@ onMounted(() => {
   store.fetchTasks()
   categoryStore.fetchCategories()
 })
+
+// --- Utility: parse a backend UTC date string into a proper local Date ---
+const parseBackendDateToDate = (dateStr) => {
+  if (!dateStr) return null;
+  let safeStr = dateStr;
+  if (!safeStr.includes('T')) {
+    safeStr = safeStr.replace(' ', 'T');
+  }
+  if (!safeStr.endsWith('Z') && !safeStr.includes('+') && !safeStr.match(/-\d{2}:\d{2}$/)) {
+    safeStr += 'Z';
+  }
+  return new Date(safeStr);
+}
 
 // Expanded state for groups
 const expandedGroups = ref({})
@@ -75,7 +94,7 @@ const groupedTasks = computed(() => {
       if (task.status === 'completed' || !task.due_date) {
         matchStatus = false
       } else {
-        const due = new Date(task.due_date)
+        const due = parseBackendDateToDate(task.due_date)
         due.setHours(0,0,0,0)
         matchStatus = due < today
       }
@@ -98,7 +117,7 @@ const groupedTasks = computed(() => {
       } else {
         const today = new Date()
         today.setHours(0, 0, 0, 0)
-        const due = new Date(task.due_date)
+        const due = parseBackendDateToDate(task.due_date)
         due.setHours(0, 0, 0, 0)
         
         if (filterDate.value === 'Today') {
@@ -129,7 +148,7 @@ const groupedTasks = computed(() => {
       if (!a.due_date && !b.due_date) result = 0
       else if (!a.due_date) result = 1
       else if (!b.due_date) result = -1
-      else result = new Date(a.due_date) - new Date(b.due_date)
+      else result = parseBackendDateToDate(a.due_date) - parseBackendDateToDate(b.due_date)
     } else if (sortBy.value === 'Priority') {
       const priorityOrder = { high: 3, medium: 2, low: 1, null: 0, undefined: 0, '': 0 }
       const pA = priorityOrder[a.priority?.toLowerCase()] || 0
@@ -141,7 +160,7 @@ const groupedTasks = computed(() => {
         if (!a.due_date && !b.due_date) result = 0
         else if (!a.due_date) result = 1
         else if (!b.due_date) result = -1
-        else result = new Date(a.due_date) - new Date(b.due_date)
+        else result = parseBackendDateToDate(a.due_date) - parseBackendDateToDate(b.due_date)
       }
     }
     
@@ -152,52 +171,61 @@ const groupedTasks = computed(() => {
   const result = []
   
   if (sortBy.value === 'Due Date') {
-    const groups = {
-      Overdue: [],
-      Today: [],
-      Upcoming: [],
-      Completed: []
-    }
+    const dateGroups = {}
+    const noDateTasks = []
+    const completedTasks = []
     
-    const today = new Date()
-    today.setHours(0,0,0,0)
-
     filtered.forEach(t => {
       if (t.status === 'completed') {
-        groups.Completed.push(t)
+        completedTasks.push(t)
         return
       }
       
       if (!t.due_date) {
-        groups.Upcoming.push(t)
+        noDateTasks.push(t)
         return
       }
       
-      const due = new Date(t.due_date)
-      due.setHours(0,0,0,0)
+      // Get local YYYY-MM-DD
+      const due = parseBackendDateToDate(t.due_date)
+      const year = due.getFullYear()
+      const month = String(due.getMonth() + 1).padStart(2, '0')
+      const day = String(due.getDate()).padStart(2, '0')
+      const dateKey = `${year}-${month}-${day}`
       
-      if (due < today) {
-        groups.Overdue.push(t)
-      } else if (due.getTime() === today.getTime()) {
-        groups.Today.push(t)
-      } else {
-        groups.Upcoming.push(t)
+      if (!dateGroups[dateKey]) {
+        dateGroups[dateKey] = []
       }
+      dateGroups[dateKey].push(t)
     })
     
-    // Determine group order based on sortDesc
-    const groupOrder = sortDesc.value 
-      ? ['Upcoming', 'Today', 'Overdue'] // Descending: furthest in future to oldest
-      : ['Overdue', 'Today', 'Upcoming'] // Ascending: oldest to furthest in future
-
-    groupOrder.forEach(g => {
-      if (filterStatus.value === 'Completed') return // Don't show these in completed tab
-      if (filterStatus.value === 'Overdue' && g !== 'Overdue') return
-      if (groups[g].length) result.push({ name: g, tasks: groups[g] })
+    // Sort the date keys
+    const sortedDateKeys = Object.keys(dateGroups).sort((a, b) => {
+      return sortDesc.value ? b.localeCompare(a) : a.localeCompare(b)
     })
+    
+    const formatDisplayDate = (dateString) => {
+      // Use T12:00:00 to avoid timezone shift when parsing
+      const d = new Date(dateString + 'T12:00:00')
+      return `📅 ${d.toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}`
+    }
+    
+    if (filterStatus.value !== 'Completed') {
+      if (sortDesc.value && noDateTasks.length > 0) {
+        result.push({ name: '📅 No Date', tasks: noDateTasks })
+      }
+      
+      sortedDateKeys.forEach(dateKey => {
+        result.push({ name: formatDisplayDate(dateKey), tasks: dateGroups[dateKey] })
+      })
+      
+      if (!sortDesc.value && noDateTasks.length > 0) {
+        result.push({ name: '📅 No Date', tasks: noDateTasks })
+      }
+    }
 
-    if ((filterStatus.value === 'All Statuses' || filterStatus.value === 'Completed') && groups.Completed.length) {
-      result.push({ name: 'Completed', tasks: groups.Completed })
+    if ((filterStatus.value === 'All Statuses' || filterStatus.value === 'Completed') && completedTasks.length) {
+      result.push({ name: 'Completed', tasks: completedTasks })
     }
     
   } else if (sortBy.value === 'Priority') {
@@ -250,12 +278,27 @@ const groupedTasks = computed(() => {
           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" class="search-icon"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           <input v-model="searchQuery" type="text" :placeholder="t('tasks.filters.search_placeholder')" class="search-input" />
         </div>
+        <!-- Calendar Icon Button -->
+        <button class="tl-calendar-btn" @click="goToCalendar" title="View in Calendar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="3"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <circle cx="8"  cy="15" r="1.1" fill="currentColor" stroke="none"/>
+            <circle cx="12" cy="15" r="1.1" fill="currentColor" stroke="none"/>
+            <circle cx="16" cy="15" r="1.1" fill="currentColor" stroke="none"/>
+            <circle cx="8"  cy="19" r="1.1" fill="currentColor" stroke="none"/>
+            <circle cx="12" cy="19" r="1.1" fill="currentColor" stroke="none"/>
+          </svg>
+          <span>Calendar</span>
+        </button>
       </div>
 
       <div class="filter-toggle-container">
         <div class="filter-label-icon" @click="showDropdowns = !showDropdowns">
           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-          <span style="font-weight: 700; color: #1F2937;">{{ t('tasks.filters.title') }}</span>
+          <span style="font-weight: 700; color: var(--text-dark);">{{ t('tasks.filters.title') }}</span>
           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" class="chevron-toggle" :class="{ rotated: showDropdowns }"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
         </div>
         
@@ -349,7 +392,7 @@ const groupedTasks = computed(() => {
         <SkeletonLoader type="circle" width="24px" height="24px" />
       </div>
       <div class="group-content" :class="{ 'is-grid': viewLayout === 'grid' }">
-        <div v-for="i in 4" :key="i" class="task-item-row" :class="{ 'is-grid': viewLayout === 'grid' }" style="border-bottom: 1px solid #F3F4F6; padding: 16px 0;">
+        <div v-for="i in 4" :key="i" class="task-item-row" :class="{ 'is-grid': viewLayout === 'grid' }" style="border-bottom: 1px solid var(--border-light); padding: 16px 0;">
           <div class="task-main-info" style="width: 100%; display: flex; gap: 16px;">
             <SkeletonLoader type="circle" width="24px" height="24px" />
             <div style="flex: 1;">
@@ -365,7 +408,7 @@ const groupedTasks = computed(() => {
       </div>
     </div>
     
-    <div v-if="!store.initialLoading && groupedTasks.length === 0" style="padding: 40px; text-align: center; color: #9CA3AF;">
+    <div v-if="!store.initialLoading && groupedTasks.length === 0" style="padding: 40px; text-align: center; color: var(--text-muted);">
       <div style="margin-bottom: 16px;">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="48" style="opacity: 0.5; margin: 0 auto;">
            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -437,13 +480,13 @@ const groupedTasks = computed(() => {
 }
 
 .group-header:hover {
-  background-color: #F9FAFB;
+  background-color: var(--bg-main);
 }
 
 .group-title {
   font-size: 16px;
   font-weight: 700;
-  color: #1F2937;
+  color: var(--text-dark);
   margin: 0;
 }
 
@@ -454,8 +497,8 @@ const groupedTasks = computed(() => {
 }
 
 .group-count {
-  background-color: #F3F4F6;
-  color: #4B5563;
+  background-color: var(--hover-bg);
+  color: var(--text-muted);
   font-size: 12px;
   font-weight: 600;
   padding: 2px 8px;
@@ -463,7 +506,7 @@ const groupedTasks = computed(() => {
 }
 
 .chevron-icon {
-  color: #9CA3AF;
+  color: var(--text-muted);
   transition: transform 0.2s;
 }
 
@@ -474,8 +517,8 @@ const groupedTasks = computed(() => {
 .group-content {
   display: flex;
   flex-direction: column;
-  background: white;
-  border: 1px solid #F3F4F6;
+  background: var(--card-bg);
+  border: 1px solid var(--border-light);
   border-radius: 12px;
   padding: 8px 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
@@ -495,8 +538,8 @@ const groupedTasks = computed(() => {
 .filters-card {
   display: flex;
   flex-direction: column;
-  background: white;
-  border: 1px solid #F3F4F6;
+  background: var(--card-bg);
+  border: 1px solid var(--border-light);
   border-radius: 12px;
   padding: 16px 20px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
@@ -509,7 +552,7 @@ const groupedTasks = computed(() => {
   justify-content: center;
   width: 100%;
   padding-bottom: 16px;
-  border-bottom: 1px solid #F3F4F6;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .search-input-wrapper {
@@ -518,21 +561,21 @@ const groupedTasks = computed(() => {
   gap: 12px;
   width: 100%;
   max-width: 600px;
-  background: #F9FAFB;
+  background: var(--hover-bg);
   padding: 12px 20px;
   border-radius: 30px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--border-light);
   transition: all 0.2s;
 }
 
 .search-input-wrapper:focus-within {
-  background: white;
-  border-color: #3B82F6;
+  background: var(--card-bg);
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .search-icon {
-  color: #9CA3AF;
+  color: var(--text-muted);
 }
 
 .search-input {
@@ -540,12 +583,35 @@ const groupedTasks = computed(() => {
   border: none;
   outline: none;
   font-size: 15px;
-  color: #374151;
+  color: var(--text-dark);
   background: transparent;
 }
 
 .search-input::placeholder {
-  color: #9CA3AF;
+  color: var(--text-muted);
+}
+
+.tl-calendar-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  margin-left: 16px;
+}
+
+.tl-calendar-btn:hover {
+  border-color: var(--primary);
+  background: rgba(59,130,246,0.05);
+  transform: translateY(-1px);
 }
 
 .filter-toggle-container {
@@ -567,23 +633,23 @@ const groupedTasks = computed(() => {
   padding: 8px 14px;
   border-radius: 8px;
   transition: background 0.2s;
-  background: white;
-  border: 1px solid #E5E7EB;
+  background: var(--card-bg);
+  border: 1px solid var(--border-light);
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-dark);
 }
 
 .customize-btn:hover {
-  background: #F9FAFB;
+  background: var(--hover-bg);
 }
 
 .customize-dropdown {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  background: white;
-  border: 1px solid #E5E7EB;
+  background: var(--card-bg);
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
   min-width: 140px;
@@ -599,7 +665,7 @@ const groupedTasks = computed(() => {
   padding: 8px 12px;
   font-size: 13px;
   font-weight: 500;
-  color: #4B5563;
+  color: var(--text-muted);
   background: transparent;
   border: none;
   border-radius: 6px;
@@ -608,12 +674,12 @@ const groupedTasks = computed(() => {
 }
 
 .dropdown-item:hover {
-  background: #F3F4F6;
+  background: var(--hover-bg);
 }
 
 .dropdown-item.active {
-  color: #3B82F6;
-  background: #EFF6FF;
+  color: var(--primary);
+  background: var(--stat-blue-bg);
 }
 
 .filter-label-icon {
@@ -628,11 +694,11 @@ const groupedTasks = computed(() => {
 }
 
 .filter-label-icon:hover {
-  background: #F3F4F6;
+  background: var(--hover-bg);
 }
 
 .chevron-toggle {
-  color: #6B7280;
+  color: var(--text-muted);
   transition: transform 0.3s;
 }
 
@@ -673,17 +739,17 @@ const groupedTasks = computed(() => {
 .filter-group label {
   font-size: 11px;
   font-weight: 600;
-  color: #6B7280;
+  color: var(--text-muted);
 }
 
 .filter-group select {
   padding: 8px 32px 8px 12px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
-  background-color: white;
+  color: var(--text-dark);
+  background-color: var(--card-bg);
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -695,7 +761,7 @@ const groupedTasks = computed(() => {
 }
 
 .filter-group select:focus {
-  border-color: #3B82F6;
+  border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
@@ -705,34 +771,34 @@ const groupedTasks = computed(() => {
   justify-content: center;
   width: 36px;
   height: 36px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--border-light);
   border-radius: 8px;
-  background: white;
-  color: #3B82F6;
+  background: var(--card-bg);
+  color: var(--primary);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .icon-btn:hover {
-  background: #EFF6FF;
-  border-color: #BFDBFE;
+  background: var(--stat-blue-bg);
+  border-color: var(--primary);
 }
 
 .reset-btn {
   padding: 0 16px;
   height: 36px;
-  background: #F3F4F6;
+  background: var(--hover-bg);
   border: none;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #4B5563;
+  color: var(--text-muted);
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .reset-btn:hover {
-  background: #E5E7EB;
+  background: var(--active-bg);
 }
 
 /* ===== Responsive: Tablet ===== */

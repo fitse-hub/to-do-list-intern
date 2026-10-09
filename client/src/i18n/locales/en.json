@@ -6,6 +6,8 @@
     "reports": "Reports",
     "settings": "Settings",
     "profile": "Profile",
+    "calendar": "Calendar",
+    "open_calendar": "Open Calendar (C)",
     "logout": "Logout"
   },
   "dashboard": {
@@ -99,26 +101,31 @@
     "modal": {
       "create_title": "Create New Task",
       "edit_title": "Edit Task",
-      "title_label": "Title",
-      "title_placeholder": "e.g. Finish project report",
-      "category_label": "Category",
-      "select_category": "Select category",
+      "title_label": "Task Title",
+      "title_placeholder": "What needs to be done?",
+      "category_label": "Category / Project",
+      "select_category": "-- Select Category --",
+      "new_category": "Create New Category",
+      "cat_name_placeholder": "Category Name",
+      "btn_cancel": "Cancel",
+      "btn_add": "Add",
+      "btn_adding": "Adding...",
+      "edit_category": "Edit Category",
+      "btn_update": "Update",
+      "btn_updating": "Updating...",
       "priority_label": "Priority",
-      "select_priority": "Select priority",
-      "start_date": "Start Date & Time",
-      "due_date": "Due Date & Time",
-      "description": "Description",
-      "desc_placeholder": "Add details...",
+      "select_priority": "-- Select Priority --",
+      "start_date": "Start Date (Optional)",
+      "due_date": "Due Date (Optional)",
+      "description": "Description (Optional)",
+      "desc_placeholder": "Add any extra details, notes, or links here...",
       "btn_create": "Create Task",
       "btn_creating": "Creating...",
-      "btn_update": "Update Task",
-      "btn_updating": "Updating...",
-      "btn_cancel": "Cancel",
-      "new_category": "New Category",
-      "edit_category": "Edit Category",
-      "cat_name_placeholder": "Enter Category Name",
-      "btn_add": "Add",
-      "btn_adding": "Adding..."
+      "btn_adding": "Adding...",
+      "crowded_warning": "⚠ You already have {count} task due on {date}.",
+      "crowded_warning_plural": "⚠ You already have {count} tasks due on {date}.",
+      "btn_create_anyway": "Create Anyway",
+      "btn_update_anyway": "Update Anyway"
     },
     "priority": {
       "high": "High",
@@ -219,6 +226,74 @@
       "confirm_password": "Confirm Password",
       "saving": "Saving...",
       "update_btn": "Update Profile"
+    }
+  },
+  "calendar": {
+    "header": {
+      "today": "Today",
+      "day": "Day",
+      "week": "Week",
+      "month": "Month",
+      "year": "Year",
+      "default": "Default",
+      "search_placeholder": "Search tasks…",
+      "new_task": "New Task"
+    },
+    "sidebar": {
+      "projects": "Projects",
+      "loading": "Loading…",
+      "no_categories": "No categories",
+      "priority": "Priority",
+      "priorities": {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      },
+      "status": "Status",
+      "statuses": {
+        "todo": "Pending",
+        "completed": "Completed",
+        "failed": "Failed",
+        "archived": "Archived"
+      },
+      "clear_filters": "Clear Filters",
+      "legend": "Legend",
+      "overdue": "Overdue"
+    },
+    "detail": {
+      "description": "Description",
+      "no_description": "No description provided.",
+      "priority": "Priority",
+      "none": "None",
+      "status": "Status",
+      "project": "Project",
+      "due_date": "Due Date",
+      "start_date": "Start Date",
+      "created": "Created",
+      "click_to_close": "Click outside to close"
+    },
+    "drawer": {
+      "task_scheduled": "task scheduled",
+      "tasks_scheduled": "tasks scheduled",
+      "no_tasks": "No tasks on this day",
+      "add_task": "Add Task to this Day"
+    },
+    "shortcuts": {
+      "navigate": "Navigate",
+      "today": "Today",
+      "new_task": "New Task",
+      "close": "Close"
+    },
+    "common": {
+      "task_count": "{count} task",
+      "tasks_count": "{count} tasks",
+      "add_task": "Add Task",
+      "all_day": "All Day / No Time Set",
+      "more_tasks": "+{count} more",
+      "show_less": "Show less"
+    },
+    "empty": {
+      "no_tasks_period": "No tasks found for this period."
     }
   },
   "buttons": {

@@ -1,8 +1,9 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useTaskStore } from '@/stores/taskStore'
 import { useCategoryStore } from '@/stores/categoryStore'
 import { useRouter } from 'vue-router'
+import WarningConfirmation from '@/components/WarningConfirmation.vue'
 
 const store = useTaskStore()
 const categoryStore = useCategoryStore()
@@ -16,6 +17,54 @@ const priority = ref('')
 
 const showNewListModal = ref(false)
 const newListName = ref('')
+const showWarningModal = ref(false)
+const errors = ref({})
+
+const currentLocalTime = computed(() => {
+  const d = new Date()
+  const tzoffset = d.getTimezoneOffset() * 60000
+  return new Date(d.getTime() - tzoffset).toISOString().slice(0, 16)
+})
+
+watch(startDate, (newVal) => {
+  if (newVal && dueDate.value && new Date(dueDate.value) < new Date(newVal)) {
+    dueDate.value = newVal
+  }
+})
+
+const parseBackendDate = (dateStr) => {
+  if (!dateStr) return '';
+  let safeStr = dateStr;
+  if (!safeStr.includes('T')) {
+    safeStr = safeStr.replace(' ', 'T');
+  }
+  if (!safeStr.endsWith('Z') && !safeStr.includes('+') && !safeStr.match(/-\d{2}:\d{2}$/)) {
+    safeStr += 'Z';
+  }
+  const d = new Date(safeStr);
+  const tzoffset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tzoffset).toISOString().slice(0, 16);
+}
+
+const crowdedScheduleWarning = computed(() => {
+  if (!dueDate.value) return null
+  const selectedDateStr = dueDate.value.substring(0, 10)
+  
+  const count = store.tasks.filter(task => {
+    if (!task.due_date) return false
+    const localStr = parseBackendDate(task.due_date)
+    if (!localStr) return false
+    return localStr.substring(0, 10) === selectedDateStr
+  }).length
+  
+  if (count > 0) {
+    const d = new Date(selectedDateStr + 'T12:00:00')
+    const formattedDate = d.toLocaleDateString(undefined, { month: 'long', day: 'numeric' })
+    const taskWord = count === 1 ? 'task' : 'tasks'
+    return `⚠ You already have ${count} ${taskWord} due on ${formattedDate}.`
+  }
+  return null
+})
 
 onMounted(async () => {
   try {
@@ -27,10 +76,22 @@ onMounted(async () => {
   } catch (error) {
     console.error('Failed to load categories:', error)
   }
+  // Fetch existing tasks so the crowded schedule warning works
+  if (store.tasks.length === 0) {
+    try {
+      await store.fetchTasks()
+    } catch (error) {
+      console.error('Failed to load tasks:', error)
+    }
+  }
 })
 
 const handleAddCategory = async () => {
-  if (!newListName.value.trim()) return
+  errors.value.newCategory = ''
+  if (!newListName.value.trim()) {
+    errors.value.newCategory = 'Category name is required'
+    return
+  }
 
   const success = await categoryStore.createCategory(newListName.value.trim())
   if (success) {
@@ -52,8 +113,42 @@ const goBack = () => {
   router.push('/todos')
 }
 
-const handleSubmit = async () => {
-  if (!title.value.trim()) return
+const formatForBackend = (val) => {
+  if (!val) return null;
+  return new Date(val).toISOString();
+}
+
+const validate = () => {
+  errors.value = {}
+
+  if (!title.value.trim()) {
+    errors.value.title = 'Title is required'
+  }
+
+  if (startDate.value && dueDate.value) {
+    const start = new Date(startDate.value)
+    const due = new Date(dueDate.value)
+    if (start > due) {
+      errors.value.date = 'Start date cannot be after due date'
+    }
+  }
+
+  return Object.keys(errors.value).length === 0
+}
+
+const handleSubmit = () => {
+  if (!validate()) return
+
+  if (crowdedScheduleWarning.value) {
+    showWarningModal.value = true
+    return
+  }
+
+  executeSubmit()
+}
+
+const executeSubmit = async () => {
+  showWarningModal.value = false
 
   // Get category ID from the selected category name
   const categoryId = categoryStore.getCategoryIdByName(category.value)
@@ -61,8 +156,8 @@ const handleSubmit = async () => {
   await store.createTask(
     title.value,
     categoryId,
-    startDate.value || null,
-    dueDate.value || null,
+    formatForBackend(startDate.value),
+    formatForBackend(dueDate.value),
     priority.value || null
   )
   router.push('/todos')
@@ -123,7 +218,7 @@ const handleSubmit = async () => {
         {{ store.error }}
       </div>
 
-      <form @submit.prevent="handleSubmit">
+      <form novalidate @submit.prevent="handleSubmit">
         <!-- Row 1: Title and Category -->
         <div class="desktop-field">
           <label class="desktop-label">Title <span class="required-star">*</span></label>
@@ -136,8 +231,15 @@ const handleSubmit = async () => {
               type="text"
               placeholder="e.g. Buy groceries"
               class="desktop-input"
-              required
+              :class="{ 'input-error': errors.title }"
+              @input="errors.title = ''"
             />
+          </div>
+          <div v-if="errors.title" class="error-text">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {{ errors.title }}
           </div>
         </div>
 
@@ -209,6 +311,8 @@ const handleSubmit = async () => {
               v-model="startDate"
               type="datetime-local"
               class="desktop-select"
+              :class="{ 'input-error': errors.date }"
+              @change="errors.date = ''"
             />
             <svg class="chevron-down" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -226,12 +330,21 @@ const handleSubmit = async () => {
               v-model="dueDate"
               type="datetime-local"
               class="desktop-select"
-              :min="startDate || new Date().toISOString().slice(0, 16)"
+              :min="startDate || currentLocalTime"
+              :class="{ 'input-error': errors.date }"
+              @change="errors.date = ''"
             />
             <svg class="chevron-down" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
           </div>
+        </div>
+
+        <div v-if="errors.date" class="error-text" style="margin-bottom: 16px;">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {{ errors.date }}
         </div>
 
         <!-- Row 3: Description (full width) -->
@@ -328,7 +441,14 @@ const handleSubmit = async () => {
     </div>
 
     <!-- Mobile Form -->
-    <form @submit.prevent="handleSubmit" class="mobile-form">
+    <div v-if="store.error" class="error-message" style="margin: 0 16px 20px;">
+      <svg style="width: 18px; height: 18px; flex-shrink: 0;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      {{ store.error }}
+    </div>
+
+    <form novalidate @submit.prevent="handleSubmit" class="mobile-form">
       <!-- Title -->
       <div class="mobile-field">
         <label class="mobile-label">Title <span class="required-star">*</span></label>
@@ -341,8 +461,15 @@ const handleSubmit = async () => {
             type="text"
             placeholder="e.g. Buy groceries"
             class="mobile-input"
-            required
+            :class="{ 'input-error': errors.title }"
+            @input="errors.title = ''"
           />
+        </div>
+        <div v-if="errors.title" class="error-text">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {{ errors.title }}
         </div>
       </div>
 
@@ -413,6 +540,8 @@ const handleSubmit = async () => {
               v-model="startDate"
               type="datetime-local"
               class="mobile-select"
+              :class="{ 'input-error': errors.date }"
+              @change="errors.date = ''"
             />
             <svg class="chevron-down" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -430,13 +559,22 @@ const handleSubmit = async () => {
               v-model="dueDate"
               type="datetime-local"
               class="mobile-select"
-              :min="startDate || new Date().toISOString().slice(0, 16)"
+              :min="startDate || currentLocalTime"
+              :class="{ 'input-error': errors.date }"
+              @change="errors.date = ''"
             />
             <svg class="chevron-down" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
           </div>
         </div>
+      </div>
+
+      <div v-if="errors.date" class="error-text" style="margin: -8px 0 16px;">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        {{ errors.date }}
       </div>
 
       <!-- Create Task Button -->
@@ -468,10 +606,17 @@ const handleSubmit = async () => {
           type="text"
           placeholder="Enter Category Name"
           class="search-input"
-          style="width: 100%; margin-bottom: 24px; padding: 12px;"
+          style="width: 100%; margin-bottom: 8px; padding: 12px;"
+          :class="{ 'input-error': errors.newCategory }"
           @keyup.enter="handleAddCategory"
-          @input="categoryStore.error = null"
+          @input="categoryStore.error = null; errors.newCategory = ''"
         />
+        <div v-if="errors.newCategory" class="error-text" style="margin-bottom: 16px;">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {{ errors.newCategory }}
+        </div>
         <div class="modal-actions" style="justify-content: flex-end; gap: 12px;">
           <button @click="closeModal" class="btn modal-cancel-btn" style="border: none; background: transparent; padding: 8px 16px;">Cancel</button>
           <button @click="handleAddCategory" class="btn btn-primary" style="padding: 8px 24px; border-radius: 999px;" :disabled="categoryStore.loading">
@@ -481,6 +626,13 @@ const handleSubmit = async () => {
       </div>
     </div>
   </Teleport>
+  <!-- Warning Confirmation Modal -->
+  <WarningConfirmation
+    :show="showWarningModal"
+    :message="crowdedScheduleWarning"
+    @cancel="showWarningModal = false"
+    @confirm="executeSubmit"
+  />
 </template>
 
 <style scoped>
@@ -534,7 +686,7 @@ const handleSubmit = async () => {
 
 /* Desktop Form Card */
 .desktop-form-card {
-  background-color: white;
+  background-color: var(--card-bg);
   border: 1px solid var(--border-light);
   border-radius: 16px;
   padding: 48px;
@@ -588,12 +740,12 @@ const handleSubmit = async () => {
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: #6B7280;
+  color: var(--text-muted);
   margin-bottom: 10px;
 }
 
 .required-star {
-  color: #EF4444;
+  color: var(--stat-red-text);
 }
 
 .desktop-input-wrapper {
@@ -605,7 +757,7 @@ const handleSubmit = async () => {
 .input-icon {
   position: absolute;
   left: 16px;
-  color: #9CA3AF;
+  color: var(--text-muted);
   pointer-events: none;
   z-index: 1;
 }
@@ -613,12 +765,12 @@ const handleSubmit = async () => {
 .desktop-input {
   width: 100%;
   padding: 14px 16px 14px 48px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--border-light);
   border-radius: 12px;
   font-size: 15px;
   font-family: inherit;
   color: var(--text-dark);
-  background-color: white;
+  background-color: var(--card-bg);
   transition: all 0.2s ease;
 }
 
@@ -629,18 +781,18 @@ const handleSubmit = async () => {
 }
 
 .desktop-input::placeholder {
-  color: #9CA3AF;
+  color: var(--text-muted);
 }
 
 .desktop-textarea {
   width: 100%;
   padding: 14px 16px 14px 48px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--border-light);
   border-radius: 12px;
   font-size: 15px;
   font-family: inherit;
   color: var(--text-dark);
-  background-color: white;
+  background-color: var(--card-bg);
   resize: vertical;
   min-height: 100px;
   transition: all 0.2s ease;
@@ -654,7 +806,7 @@ const handleSubmit = async () => {
 }
 
 .desktop-textarea::placeholder {
-  color: #9CA3AF;
+  color: var(--text-muted);
 }
 
 /* Desktop Select */
@@ -713,7 +865,7 @@ const handleSubmit = async () => {
 .chevron-down {
   position: absolute;
   right: 16px;
-  color: #9CA3AF;
+  color: var(--text-muted);
   pointer-events: none;
   z-index: 1;
 }
@@ -721,12 +873,12 @@ const handleSubmit = async () => {
 .desktop-select {
   width: 100%;
   padding: 14px 44px 14px 48px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--border-light);
   border-radius: 12px;
   font-size: 15px;
   font-family: inherit;
   color: var(--text-dark);
-  background-color: white;
+  background-color: var(--card-bg);
   appearance: none;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -743,10 +895,10 @@ const handleSubmit = async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #F9FAFB;
+  background-color: var(--hover-bg);
   padding: 20px;
   border-radius: 12px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--border-light);
   margin-bottom: 24px;
 }
 
@@ -782,7 +934,7 @@ const handleSubmit = async () => {
 
 .reminder-subtitle {
   font-size: 13px;
-  color: #9CA3AF;
+  color: var(--text-muted);
 }
 
 /* Toggle Switch */
@@ -806,7 +958,7 @@ const handleSubmit = async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #E5E7EB;
+  background-color: var(--active-bg);
   transition: 0.3s;
   border-radius: 28px;
 }
@@ -818,13 +970,13 @@ const handleSubmit = async () => {
   width: 22px;
   left: 3px;
   bottom: 3px;
-  background-color: white;
+  background-color: var(--card-bg);
   transition: 0.3s;
   border-radius: 50%;
 }
 
 input:checked + .toggle-slider {
-  background-color: #3B82F6;
+  background-color: var(--primary);
 }
 
 input:checked + .toggle-slider:before {
@@ -838,7 +990,7 @@ input:checked + .toggle-slider:before {
   gap: 16px;
   margin-top: 16px;
   padding-top: 32px;
-  border-top: 1px solid #E5E7EB;
+  border-top: 1px solid var(--border-light);
 }
 
 .btn-cancel-desktop {
@@ -850,16 +1002,16 @@ input:checked + .toggle-slider:before {
   font-weight: 600;
   font-size: 15px;
   cursor: pointer;
-  border: 1px solid #E5E7EB;
-  background-color: white;
+  border: 1px solid var(--border-light);
+  background-color: var(--card-bg);
   color: var(--text-dark);
   text-decoration: none;
   transition: all 0.2s ease;
 }
 
 .btn-cancel-desktop:hover {
-  background-color: #F9FAFB;
-  border-color: #D1D5DB;
+  background-color: var(--hover-bg);
+  border-color: var(--border-light);
 }
 
 .btn-submit-desktop {
@@ -958,7 +1110,7 @@ input:checked + .toggle-slider:before {
 }
 
 .modal-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
   width: 100%;
   max-width: 400px;
@@ -986,7 +1138,7 @@ input:checked + .toggle-slider:before {
   .mobile-task-page {
     display: block;
     min-height: 100vh;
-    background-color: #F9FAFB;
+    background-color: var(--hover-bg);
     padding-bottom: 90px;
   }
 
@@ -996,8 +1148,8 @@ input:checked + .toggle-slider:before {
     align-items: center;
     justify-content: space-between;
     padding: 16px 20px;
-    background-color: white;
-    border-bottom: 1px solid #E5E7EB;
+    background-color: var(--card-bg);
+    border-bottom: 1px solid var(--border-light);
     position: sticky;
     top: 0;
     z-index: 10;
@@ -1024,7 +1176,7 @@ input:checked + .toggle-slider:before {
 
   /* Hero Banner */
   .mobile-hero-banner {
-    background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+    background: var(--stat-blue-bg);
     padding: 24px 20px;
     margin: 0 20px 20px;
     border-radius: 16px;
@@ -1050,7 +1202,7 @@ input:checked + .toggle-slider:before {
 
   .hero-text-content p {
     font-size: 13px;
-    color: #6B7280;
+    color: var(--text-muted);
     margin: 0;
     line-height: 1.5;
   }
@@ -1075,12 +1227,12 @@ input:checked + .toggle-slider:before {
     display: block;
     font-size: 13px;
     font-weight: 600;
-    color: #6B7280;
+    color: var(--text-muted);
     margin-bottom: 8px;
   }
 
   .required-star {
-    color: #EF4444;
+    color: var(--stat-red-text);
   }
 
   .mobile-input-wrapper {
@@ -1092,7 +1244,7 @@ input:checked + .toggle-slider:before {
   .input-icon {
     position: absolute;
     left: 14px;
-    color: #9CA3AF;
+    color: var(--text-muted);
     pointer-events: none;
     z-index: 1;
   }
@@ -1100,12 +1252,12 @@ input:checked + .toggle-slider:before {
   .mobile-input {
     width: 100%;
     padding: 12px 14px 12px 44px;
-    border: 1px solid #E5E7EB;
+    border: 1px solid var(--border-light);
     border-radius: 12px;
     font-size: 14px;
     font-family: inherit;
     color: var(--text-dark);
-    background-color: white;
+    background-color: var(--card-bg);
   }
 
   .mobile-input:focus {
@@ -1115,18 +1267,18 @@ input:checked + .toggle-slider:before {
   }
 
   .mobile-input::placeholder {
-    color: #9CA3AF;
+    color: var(--text-muted);
   }
 
   .mobile-textarea {
     width: 100%;
     padding: 12px 14px 12px 44px;
-    border: 1px solid #E5E7EB;
+    border: 1px solid var(--border-light);
     border-radius: 12px;
     font-size: 14px;
     font-family: inherit;
     color: var(--text-dark);
-    background-color: white;
+    background-color: var(--card-bg);
     resize: vertical;
     min-height: 80px;
   }
@@ -1138,7 +1290,7 @@ input:checked + .toggle-slider:before {
   }
 
   .mobile-textarea::placeholder {
-    color: #9CA3AF;
+    color: var(--text-muted);
   }
 
   /* Mobile Row */
@@ -1170,7 +1322,7 @@ input:checked + .toggle-slider:before {
   .chevron-down {
     position: absolute;
     right: 14px;
-    color: #9CA3AF;
+    color: var(--text-muted);
     pointer-events: none;
     z-index: 1;
   }
@@ -1178,12 +1330,12 @@ input:checked + .toggle-slider:before {
   .mobile-select {
     width: 100%;
     padding: 12px 40px 12px 44px;
-    border: 1px solid #E5E7EB;
+    border: 1px solid var(--border-light);
     border-radius: 12px;
     font-size: 14px;
     font-family: inherit;
     color: var(--text-dark);
-    background-color: white;
+    background-color: var(--card-bg);
     appearance: none;
     cursor: pointer;
   }
@@ -1199,10 +1351,10 @@ input:checked + .toggle-slider:before {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background-color: white;
+    background-color: var(--card-bg);
     padding: 16px;
     border-radius: 12px;
-    border: 1px solid #E5E7EB;
+    border: 1px solid var(--border-light);
     margin-bottom: 20px;
   }
 
@@ -1238,7 +1390,7 @@ input:checked + .toggle-slider:before {
 
   .reminder-subtitle {
     font-size: 12px;
-    color: #9CA3AF;
+    color: var(--text-muted);
   }
 
   /* Toggle Switch */
@@ -1262,7 +1414,7 @@ input:checked + .toggle-slider:before {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #E5E7EB;
+    background-color: var(--active-bg);
     transition: 0.3s;
     border-radius: 26px;
   }
@@ -1274,13 +1426,13 @@ input:checked + .toggle-slider:before {
     width: 20px;
     left: 3px;
     bottom: 3px;
-    background-color: white;
+    background-color: var(--card-bg);
     transition: 0.3s;
     border-radius: 50%;
   }
 
   input:checked + .toggle-slider {
-    background-color: #3B82F6;
+    background-color: var(--primary);
   }
 
   input:checked + .toggle-slider:before {
@@ -1313,6 +1465,39 @@ input:checked + .toggle-slider:before {
   .mobile-create-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+}
+
+/* Schedule Warning */
+.schedule-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--stat-yellow-bg);
+  color: var(--stat-yellow-text);
+  border: 1px solid #FDE68A;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  animation: warningSlideIn 0.3s ease-out;
+}
+
+.schedule-warning-icon {
+  flex-shrink: 0;
+  color: var(--stat-yellow-text);
+}
+
+@keyframes warningSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

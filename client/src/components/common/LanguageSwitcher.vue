@@ -89,27 +89,27 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg-white, #FFFFFF);
-  border: 1px solid var(--border-light, #E5E7EB);
+  background: var(--card-bg);
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-dark, #1F2937);
+  color: var(--text-dark);
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .lang-btn:hover, .lang-btn.active {
-  background-color: #F9FAFB;
-  border-color: #D1D5DB;
+  background-color: var(--hover-bg);
+  border-color: var(--border-light);
 }
 
 .globe-icon {
   width: 18px;
   height: 18px;
-  color: var(--text-muted, #6B7280);
+  color: var(--text-muted);
 }
 
 .lang-text {
@@ -119,7 +119,7 @@ onUnmounted(() => {
 .chevron-icon {
   width: 16px;
   height: 16px;
-  color: var(--text-muted, #6B7280);
+  color: var(--text-muted);
   transition: transform 0.2s ease;
 }
 
@@ -131,8 +131,8 @@ onUnmounted(() => {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  background: var(--bg-white, #FFFFFF);
-  border: 1px solid var(--border-light, #E5E7EB);
+  background: var(--card-bg);
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   min-width: 160px;
@@ -150,19 +150,19 @@ onUnmounted(() => {
   border-radius: 6px;
   text-align: left;
   font-size: 14px;
-  color: var(--text-dark, #1F2937);
+  color: var(--text-dark);
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .lang-option:hover {
-  background-color: #F3F4F6;
+  background-color: var(--hover-bg);
 }
 
 .lang-option.active {
-  color: var(--primary, #3B82F6);
+  color: var(--primary);
   font-weight: 600;
-  background-color: #EFF6FF;
+  background-color: var(--stat-blue-bg);
 }
 
 .lang-flag {
@@ -177,7 +177,7 @@ onUnmounted(() => {
 .check-icon {
   width: 16px;
   height: 16px;
-  color: var(--primary, #3B82F6);
+  color: var(--primary);
   margin-left: 8px;
 }
 

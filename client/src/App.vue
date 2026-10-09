@@ -4,11 +4,16 @@ import { useAuthStore } from './stores/authStore'
 import { useRouter } from 'vue-router'
 import LogoutConfirmation from '@/components/LogoutConfirmation.vue'
 import LanguageSwitcher from '@/components/common/LanguageSwitcher.vue'
+import ThemeToggle from '@/components/common/ThemeToggle.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
 const isSidebarOpen = ref(window.innerWidth > 768)
 const showLogoutConfirm = ref(false)
+
+function goToCalendar() {
+  router.push('/calendar')
+}
 
 const toggleSidebar = () => {
   isSidebarOpen.value = !isSidebarOpen.value
@@ -68,8 +73,29 @@ const handleLogout = async () => {
             <svg class="top-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
         </div>
-        <div class="topbar-right">
+        <div class="topbar-right" style="display: flex; align-items: center; gap: 16px;">
+          <ThemeToggle />
           <LanguageSwitcher />
+          <!-- Premium Calendar Icon Button -->
+          <button
+            class="topbar-calendar-btn"
+            :class="{ active: $route?.name === 'calendar' }"
+            @click="goToCalendar"
+            :title="$t('navigation.open_calendar')"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="3"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <circle cx="8"  cy="15" r="1.1" fill="currentColor" stroke="none"/>
+              <circle cx="12" cy="15" r="1.1" fill="currentColor" stroke="none"/>
+              <circle cx="16" cy="15" r="1.1" fill="currentColor" stroke="none"/>
+              <circle cx="8"  cy="19" r="1.1" fill="currentColor" stroke="none"/>
+              <circle cx="12" cy="19" r="1.1" fill="currentColor" stroke="none"/>
+            </svg>
+            <span class="topbar-cal-label">{{ $t('navigation.calendar') }}</span>
+          </button>
           <button class="notification-btn">
             <svg class="top-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
             <span class="notification-dot"></span>

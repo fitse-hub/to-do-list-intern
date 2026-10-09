@@ -6,11 +6,11 @@ defineProps({
   },
   title: {
     type: String,
-    default: 'Logout'
+    default: 'Schedule Warning'
   },
   message: {
     type: String,
-    default: 'Are you sure you want to log out? You will need to sign in again to access your tasks.'
+    default: 'You already have tasks scheduled for this date.'
   },
   cancelText: {
     type: String,
@@ -18,7 +18,7 @@ defineProps({
   },
   confirmText: {
     type: String,
-    default: 'Log out'
+    default: 'Create Anyway'
   }
 })
 
@@ -28,28 +28,25 @@ defineEmits(['cancel', 'confirm'])
 <template>
   <Teleport to="body">
     <Transition name="modal-fade">
-      <div v-if="show" class="logout-modal-backdrop">
-        <div class="logout-modal-card">
-          <div class="logout-modal-content">
+      <div v-if="show" class="warning-modal-backdrop">
+        <div class="warning-modal-card">
+          <div class="warning-modal-content">
             <div class="icon-container">
               <div class="icon-background"></div>
-              <svg class="logout-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              <svg class="warning-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
               </svg>
             </div>
             
-            <h3 class="logout-modal-title">{{ title }}</h3>
-            <p class="logout-modal-message">{{ message }}</p>
+            <h3 class="warning-modal-title">{{ title }}</h3>
+            <p class="warning-modal-message">{{ message }}</p>
           </div>
           
-          <div class="logout-modal-actions">
+          <div class="warning-modal-actions">
             <button @click="$emit('cancel')" class="btn-cancel">
               {{ cancelText }}
             </button>
             <button @click="$emit('confirm')" class="btn-confirm">
-              <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
               {{ confirmText }}
             </button>
           </div>
@@ -61,7 +58,7 @@ defineEmits(['cancel', 'confirm'])
 
 <style scoped>
 /* Modal Backdrop Overlay */
-.logout-modal-backdrop {
+.warning-modal-backdrop {
   position: fixed;
   top: 0;
   left: 0;
@@ -77,7 +74,7 @@ defineEmits(['cancel', 'confirm'])
 }
 
 /* Modal Card with Glassmorphism / Premium Look */
-.logout-modal-card {
+.warning-modal-card {
   background: var(--card-bg);
   border-radius: 24px;
   width: 100%;
@@ -88,7 +85,7 @@ defineEmits(['cancel', 'confirm'])
   flex-direction: column;
 }
 
-.logout-modal-content {
+.warning-modal-content {
   padding: 32px 32px 24px;
   text-align: center;
   display: flex;
@@ -96,7 +93,7 @@ defineEmits(['cancel', 'confirm'])
   align-items: center;
 }
 
-/* Icon with Pulsing Background */
+/* Warning Icon with Pulsing Background */
 .icon-container {
   position: relative;
   width: 64px;
@@ -110,21 +107,21 @@ defineEmits(['cancel', 'confirm'])
 .icon-background {
   position: absolute;
   inset: 0;
-  background-color: var(--stat-purple-bg); /* Indigo light background */
+  background-color: #FEF3C7;
   border-radius: 50%;
-  animation: pulse-ring-indigo 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.logout-icon {
+.warning-icon {
   position: relative;
   width: 32px;
   height: 32px;
-  color: var(--primary); /* Indigo */
+  color: #D97706;
   z-index: 1;
 }
 
 /* Typography */
-.logout-modal-title {
+.warning-modal-title {
   margin: 0 0 12px;
   font-size: 20px;
   font-weight: 700;
@@ -132,7 +129,7 @@ defineEmits(['cancel', 'confirm'])
   letter-spacing: -0.01em;
 }
 
-.logout-modal-message {
+.warning-modal-message {
   margin: 0;
   font-size: 15px;
   color: var(--text-muted);
@@ -140,7 +137,7 @@ defineEmits(['cancel', 'confirm'])
 }
 
 /* Action Buttons */
-.logout-modal-actions {
+.warning-modal-actions {
   display: flex;
   padding: 20px 32px 32px;
   gap: 16px;
@@ -164,7 +161,7 @@ defineEmits(['cancel', 'confirm'])
 
 .btn-cancel:hover {
   background-color: var(--hover-bg);
-  border-color: var(--border-light);
+  border-color: var(--primary);
   color: var(--text-dark);
 }
 
@@ -178,7 +175,7 @@ defineEmits(['cancel', 'confirm'])
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
   border: none;
   color: white;
   font-weight: 600;
@@ -187,27 +184,22 @@ defineEmits(['cancel', 'confirm'])
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3), 0 2px 4px -1px rgba(79, 70, 229, 0.2);
+  box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.3), 0 2px 4px -1px rgba(217, 119, 6, 0.2);
 }
 
 .btn-confirm:hover {
-  background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%);
-  box-shadow: 0 6px 8px -1px rgba(79, 70, 229, 0.4), 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+  background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+  box-shadow: 0 6px 8px -1px rgba(217, 119, 6, 0.4), 0 4px 6px -1px rgba(217, 119, 6, 0.2);
   transform: translateY(-1px);
 }
 
 .btn-confirm:active {
   transform: translateY(1px);
-  box-shadow: 0 2px 4px -1px rgba(79, 70, 229, 0.3);
-}
-
-.btn-icon {
-  width: 18px;
-  height: 18px;
+  box-shadow: 0 2px 4px -1px rgba(217, 119, 6, 0.3);
 }
 
 /* Animations */
-@keyframes pulse-ring-indigo {
+@keyframes pulse-ring {
   0% { transform: scale(0.8); opacity: 0.8; }
   50% { transform: scale(1.2); opacity: 0; }
   100% { transform: scale(0.8); opacity: 0; }
@@ -224,11 +216,11 @@ defineEmits(['cancel', 'confirm'])
   opacity: 0;
 }
 
-.modal-fade-enter-active .logout-modal-card {
+.modal-fade-enter-active .warning-modal-card {
   animation: modal-pop-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.modal-fade-leave-active .logout-modal-card {
+.modal-fade-leave-active .warning-modal-card {
   animation: modal-pop-out 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 

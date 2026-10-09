@@ -3,6 +3,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useReportStore } from '@/stores/reportStore'
+import { useThemeStore } from '@/stores/themeStore'
 import { useI18n } from 'vue-i18n'
 import {
   Chart as ChartJS,
@@ -35,6 +36,7 @@ ChartJS.register(
 
 const authStore = useAuthStore()
 const reportStore = useReportStore()
+const themeStore = useThemeStore()
 const router = useRouter()
 const { t } = useI18n()
 
@@ -44,6 +46,7 @@ const currentPassword = ref('')
 const password = ref('')
 const passwordConfirmation = ref('')
 const successMessage = ref('')
+const errors = ref({})
 
 const filters = ref({
   timeRange: 'monthly',
@@ -74,7 +77,57 @@ const handleCustomDateSearch = () => {
   }
 }
 
+const passwordCriteria = computed(() => {
+  const p = password.value
+  return {
+    length: p.length >= 8,
+    lowercase: /[a-z]/.test(p),
+    uppercase: /[A-Z]/.test(p),
+    number: /[0-9]/.test(p),
+    special: /[!@#$%^&*(),.?":{}|<>]/.test(p)
+  }
+})
+
+const isPasswordValid = computed(() => {
+  return Object.values(passwordCriteria.value).every(v => v)
+})
+
+const handleNameInput = () => {
+  name.value = name.value.replace(/[^a-zA-Z\s]/g, '')
+  errors.value.name = ''
+}
+
+const validate = () => {
+  errors.value = {}
+
+  if (!name.value.trim()) {
+    errors.value.name = 'Name is required'
+  } else if (/[^a-zA-Z\s]/.test(name.value)) {
+    errors.value.name = 'Name can only contain letters and spaces'
+  }
+
+  if (password.value || currentPassword.value || passwordConfirmation.value) {
+    if (!currentPassword.value) {
+      errors.value.currentPassword = 'Current password is required to set a new password'
+    }
+    if (!password.value) {
+      errors.value.password = 'New password is required'
+    } else if (!isPasswordValid.value) {
+      errors.value.password = 'Password must meet all requirements'
+    }
+    if (!passwordConfirmation.value) {
+      errors.value.passwordConfirmation = 'Please confirm your new password'
+    } else if (password.value !== passwordConfirmation.value) {
+      errors.value.passwordConfirmation = 'Passwords do not match'
+    }
+  }
+
+  return Object.keys(errors.value).length === 0
+}
+
 const handleUpdate = async () => {
+  if (!validate()) return
+  
   successMessage.value = ''
 
   const payload = {
@@ -253,39 +306,39 @@ const productivityTrendData = computed(() => {
         </template>
         <template v-else>
         <div class="profile-stat-card">
-          <div class="p-stat-icon-wrap" style="background-color: #EFF6FF; color: #3B82F6;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+          <div class="p-stat-icon-wrap bg-blue-soft text-blue">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
           </div>
           <div class="p-stat-info">
             <span class="p-stat-label">{{ t('profile.stats.total_tasks') }}</span>
-            <span class="p-stat-value" style="color: #3B82F6;">{{ totalTasks }}</span>
+            <span class="p-stat-value text-blue">{{ totalTasks }}</span>
           </div>
         </div>
         <div class="profile-stat-card">
-          <div class="p-stat-icon-wrap" style="background-color: #F0FDF4; color: #22C55E;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <div class="p-stat-icon-wrap bg-green-soft text-green">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
           <div class="p-stat-info">
             <span class="p-stat-label">{{ t('profile.stats.completed') }}</span>
-            <span class="p-stat-value" style="color: #22C55E;">{{ completedTasks }}</span>
+            <span class="p-stat-value text-green">{{ completedTasks }}</span>
           </div>
         </div>
         <div class="profile-stat-card">
-          <div class="p-stat-icon-wrap" style="background-color: #FFF7ED; color: #F97316;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <div class="p-stat-icon-wrap bg-orange-soft text-orange">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
           <div class="p-stat-info">
             <span class="p-stat-label">{{ t('profile.stats.todo') }}</span>
-            <span class="p-stat-value" style="color: #F97316;">{{ pendingTasks }}</span>
+            <span class="p-stat-value text-orange">{{ pendingTasks }}</span>
           </div>
         </div>
         <div class="profile-stat-card">
-          <div class="p-stat-icon-wrap" style="background-color: #F5F3FF; color: #A855F7;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+          <div class="p-stat-icon-wrap bg-red-soft text-red">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
           <div class="p-stat-info">
             <span class="p-stat-label">{{ t('profile.stats.overdue') }}</span>
-            <span class="p-stat-value" style="color: #EF4444;">{{ failedTasks }}</span>
+            <span class="p-stat-value text-red">{{ failedTasks }}</span>
           </div>
         </div>
         </template>
@@ -298,7 +351,7 @@ const productivityTrendData = computed(() => {
           <h3 class="settings-col-title">{{ t('profile.account.title') }}</h3>
           <div class="settings-list">
             <div class="settings-item" @click="showEditModal = true">
-              <div class="s-icon" style="background: #EFF6FF; color: #3B82F6;"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></div>
+              <div class="s-icon bg-blue-soft text-blue"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></div>
               <div class="s-info">
                 <span class="s-title">{{ t('profile.account.edit_profile') }}</span>
                 <span class="s-desc">{{ t('profile.account.edit_profile_desc') }}</span>
@@ -306,7 +359,7 @@ const productivityTrendData = computed(() => {
               <div class="s-action"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="chevron-right"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div>
             </div>
             <div class="settings-item" @click="showEditModal = true">
-              <div class="s-icon" style="background: #EFF6FF; color: #3B82F6;"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg></div>
+              <div class="s-icon bg-blue-soft text-blue"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg></div>
               <div class="s-info">
                 <span class="s-title">{{ t('profile.account.change_password') }}</span>
                 <span class="s-desc">{{ t('profile.account.change_password_desc') }}</span>
@@ -314,14 +367,14 @@ const productivityTrendData = computed(() => {
               <div class="s-action"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="chevron-right"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div>
             </div>
             <div class="settings-item">
-              <div class="s-icon" style="background: #EFF6FF; color: #3B82F6;"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg></div>
+              <div class="s-icon bg-blue-soft text-blue"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg></div>
               <div class="s-info">
                 <span class="s-title">{{ t('profile.account.theme') }}</span>
                 <span class="s-desc">{{ t('profile.account.theme_desc') }}</span>
               </div>
-              <div class="s-action theme-toggle" @click.stop>
-                <div class="t-btn active"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg></div>
-                <div class="t-btn"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg></div>
+              <div class="s-action theme-toggle" @click.stop="themeStore.toggleTheme()">
+                <div class="t-btn" :class="{ active: !themeStore.isDark }"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg></div>
+                <div class="t-btn" :class="{ active: themeStore.isDark }"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg></div>
               </div>
             </div>
           </div>
@@ -332,7 +385,7 @@ const productivityTrendData = computed(() => {
           <h3 class="settings-col-title">{{ t('profile.preferences.title') }}</h3>
           <div class="settings-list">
             <div class="settings-item">
-              <div class="s-icon" style="background: #EFF6FF; color: #3B82F6;"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg></div>
+              <div class="s-icon bg-blue-soft text-blue"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg></div>
               <div class="s-info">
                 <span class="s-title">{{ t('profile.preferences.notifications') }}</span>
                 <span class="s-desc">{{ t('profile.preferences.notifications_desc') }}</span>
@@ -340,7 +393,7 @@ const productivityTrendData = computed(() => {
               <div class="s-action"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="chevron-right"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div>
             </div>
             <div class="settings-item">
-              <div class="s-icon" style="background: #EFF6FF; color: #3B82F6;"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></div>
+              <div class="s-icon bg-blue-soft text-blue"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></div>
               <div class="s-info">
                 <span class="s-title">{{ t('profile.preferences.task_settings') }}</span>
                 <span class="s-desc">{{ t('profile.preferences.task_settings_desc') }}</span>
@@ -348,7 +401,7 @@ const productivityTrendData = computed(() => {
               <div class="s-action"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="chevron-right"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div>
             </div>
             <div class="settings-item">
-              <div class="s-icon" style="background: #EFF6FF; color: #3B82F6;"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg></div>
+              <div class="s-icon bg-blue-soft text-blue"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg></div>
               <div class="s-info">
                 <span class="s-title">{{ t('profile.preferences.privacy_security') }}</span>
                 <span class="s-desc">{{ t('profile.preferences.privacy_security_desc') }}</span>
@@ -401,10 +454,10 @@ const productivityTrendData = computed(() => {
             </div>
           </div>
           <div class="overview-legend">
-            <div class="legend-item"><span class="l-dot" style="background:#22C55E"></span><span class="l-label">{{ t('profile.stats.completed') }}</span><span class="l-val">{{ completedTasks }} ({{ getPct(completedTasks) }}%)</span></div>
-            <div class="legend-item"><span class="l-dot" style="background:#F97316"></span><span class="l-label">{{ t('profile.stats.todo') }}</span><span class="l-val">{{ pendingTasks }} ({{ getPct(pendingTasks) }}%)</span></div>
-            <div class="legend-item"><span class="l-dot" style="background:#EF4444"></span><span class="l-label">{{ t('profile.stats.overdue') }}</span><span class="l-val">{{ failedTasks }} ({{ getPct(failedTasks) }}%)</span></div>
-            <div class="legend-item"><span class="l-dot" style="background:#8B5CF6"></span><span class="l-label">{{ t('profile.stats.total_tasks') }}</span><span class="l-val">{{ totalTasks }} (100%)</span></div>
+            <div class="legend-item"><span class="l-dot" style="background:var(--stat-green-text)"></span><span class="l-label">{{ t('profile.stats.completed') }}</span><span class="l-val">{{ completedTasks }} ({{ getPct(completedTasks) }}%)</span></div>
+            <div class="legend-item"><span class="l-dot" style="background:var(--stat-orange-text)"></span><span class="l-label">{{ t('profile.stats.todo') }}</span><span class="l-val">{{ pendingTasks }} ({{ getPct(pendingTasks) }}%)</span></div>
+            <div class="legend-item"><span class="l-dot" style="background:var(--stat-red-text)"></span><span class="l-label">{{ t('profile.stats.overdue') }}</span><span class="l-val">{{ failedTasks }} ({{ getPct(failedTasks) }}%)</span></div>
+            <div class="legend-item"><span class="l-dot" style="background:var(--stat-purple-text)"></span><span class="l-label">{{ t('profile.stats.total_tasks') }}</span><span class="l-val">{{ totalTasks }} (100%)</span></div>
           </div>
           </template>
         </div>
@@ -474,10 +527,24 @@ const productivityTrendData = computed(() => {
           {{ authStore.error }}
         </div>
 
-        <form @submit.prevent="handleUpdate">
+        <form novalidate @submit.prevent="handleUpdate">
           <div class="form-group">
             <label for="profile-name">{{ t('profile.modal.full_name') }}</label>
-            <input id="profile-name" v-model="name" type="text" class="search-input" style="width: 100%; max-width: none;" required />
+            <input 
+              id="profile-name" 
+              v-model="name" 
+              type="text" 
+              class="search-input" 
+              style="width: 100%; max-width: none;"
+              :class="{ 'input-error': errors.name }"
+              @input="handleNameInput"
+            />
+            <div v-if="errors.name" class="error-text">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {{ errors.name }}
+            </div>
           </div>
 
           <h3 class="form-section-title" style="margin-top: 32px; border-top: 1px solid var(--border-light); padding-top: 24px;">{{ t('profile.modal.change_password') }}</h3>
@@ -485,17 +552,81 @@ const productivityTrendData = computed(() => {
 
           <div class="form-group">
             <label for="profile-current-password">{{ t('profile.modal.current_password') }}</label>
-            <input id="profile-current-password" v-model="currentPassword" type="password" class="search-input" style="width: 100%; max-width: none;" />
+            <input 
+              id="profile-current-password" 
+              v-model="currentPassword" 
+              type="password" 
+              class="search-input" 
+              style="width: 100%; max-width: none;" 
+              :class="{ 'input-error': errors.currentPassword }"
+              @input="errors.currentPassword = ''"
+            />
+            <div v-if="errors.currentPassword" class="error-text">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {{ errors.currentPassword }}
+            </div>
           </div>
 
           <div class="form-row" style="margin-bottom: 0;">
             <div class="form-group">
               <label for="profile-password">{{ t('profile.modal.new_password') }}</label>
-              <input id="profile-password" v-model="password" type="password" class="search-input" style="width: 100%; max-width: none;" />
+              <input 
+                id="profile-password" 
+                v-model="password" 
+                type="password" 
+                class="search-input" 
+                style="width: 100%; max-width: none;" 
+                :class="{ 'input-error': errors.password }"
+                @input="errors.password = ''"
+              />
+              <div v-if="password" class="password-criteria-list">
+                <div class="criteria-item" :class="{ 'met': passwordCriteria.length }">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                  At least 8 characters
+                </div>
+                <div class="criteria-item" :class="{ 'met': passwordCriteria.lowercase }">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                  Lowercase letter
+                </div>
+                <div class="criteria-item" :class="{ 'met': passwordCriteria.uppercase }">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                  Uppercase letter
+                </div>
+                <div class="criteria-item" :class="{ 'met': passwordCriteria.number }">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                  Number
+                </div>
+                <div class="criteria-item" :class="{ 'met': passwordCriteria.special }">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                  Special character
+                </div>
+              </div>
+              <div v-if="errors.password" class="error-text">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {{ errors.password }}
+              </div>
             </div>
             <div class="form-group">
               <label for="profile-password-confirm">{{ t('profile.modal.confirm_password') }}</label>
-              <input id="profile-password-confirm" v-model="passwordConfirmation" type="password" class="search-input" style="width: 100%; max-width: none;" />
+              <input 
+                id="profile-password-confirm" 
+                v-model="passwordConfirmation" 
+                type="password" 
+                class="search-input" 
+                style="width: 100%; max-width: none;" 
+                :class="{ 'input-error': errors.passwordConfirmation }"
+                @input="errors.passwordConfirmation = ''"
+              />
+              <div v-if="errors.passwordConfirmation" class="error-text">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {{ errors.passwordConfirmation }}
+              </div>
             </div>
           </div>
 
@@ -522,7 +653,7 @@ const productivityTrendData = computed(() => {
   display: flex;
   gap: 24px;
   padding: 24px 40px;
-  background-color: #F9FAFB;
+  background-color: var(--bg-main);
   min-height: calc(100vh - 73px);
   margin: -40px; /* Counteract page-content padding if needed, or adjust padding */
 }
@@ -540,13 +671,13 @@ const productivityTrendData = computed(() => {
 .page-title {
   font-size: 24px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-dark);
   margin: 0 0 4px 0;
 }
 
 /* Profile Header Card */
 .profile-header-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
   padding: 32px;
   display: flex;
@@ -560,12 +691,15 @@ const productivityTrendData = computed(() => {
   content: '';
   position: absolute;
   top: 0; right: 0; bottom: 0; left: 0;
-  background-image: url('data:image/svg+xml;utf8,<svg width="400" height="200" viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M400 0H200C200 110.457 289.543 200 400 200V0Z" fill="%23EFF6FF"/></svg>');
+  background-image: none;
   background-position: right top;
   background-repeat: no-repeat;
   background-size: cover;
   opacity: 0.8;
   pointer-events: none;
+}
+[data-theme="light"] .profile-header-card::before {
+  background-image: url('data:image/svg+xml;utf8,<svg width="400" height="200" viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M400 0H200C200 110.457 289.543 200 400 200V0Z" fill="%23EFF6FF"/></svg>');
 }
 .profile-info-group {
   display: flex;
@@ -580,8 +714,8 @@ const productivityTrendData = computed(() => {
   width: 96px;
   height: 96px;
   border-radius: 50%;
-  background: #E0E7FF;
-  border: 4px solid #EFF6FF;
+  background: var(--hover-bg);
+  border: 4px solid var(--card-bg);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -599,31 +733,31 @@ const productivityTrendData = computed(() => {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: white;
-  border: 1px solid #E5E7EB;
+  background: var(--card-bg);
+  border: 1px solid var(--border-light);
   display: flex;
   justify-content: center;
   align-items: center;
-  color: #3B82F6;
+  color: var(--primary);
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 .profile-details h2 {
   margin: 0 0 4px 0;
   font-size: 20px;
-  color: #111827;
+  color: var(--text-dark);
 }
 .profile-email {
   margin: 0 0 12px 0;
-  color: #6B7280;
+  color: var(--text-muted);
   font-size: 14px;
 }
 .plan-badge {
   display: inline-flex;
   align-items: center;
   padding: 4px 10px;
-  background: #EFF6FF;
-  color: #3B82F6;
+  background: var(--hover-bg);
+  color: var(--primary);
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
@@ -633,7 +767,8 @@ const productivityTrendData = computed(() => {
   display: flex;
   align-items: center;
   font-weight: 600;
-  background: white;
+  background: var(--card-bg);
+  color: var(--text-dark);
 }
 
 /* Stats Grid */
@@ -643,7 +778,7 @@ const productivityTrendData = computed(() => {
   gap: 16px;
 }
 .profile-stat-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 20px;
   display: flex;
@@ -668,7 +803,7 @@ const productivityTrendData = computed(() => {
 }
 .p-stat-label {
   font-size: 13px;
-  color: #6B7280;
+  color: var(--text-muted);
   font-weight: 500;
   margin-bottom: 4px;
 }
@@ -684,7 +819,7 @@ const productivityTrendData = computed(() => {
   gap: 24px;
 }
 .settings-column {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -692,7 +827,7 @@ const productivityTrendData = computed(() => {
 .settings-col-title {
   font-size: 16px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-dark);
   margin: 0 0 16px 0;
 }
 .settings-list {
@@ -705,13 +840,13 @@ const productivityTrendData = computed(() => {
   align-items: center;
   padding: 12px;
   border-radius: 8px;
-  border: 1px solid #F3F4F6;
+  border: 1px solid var(--border-light);
   cursor: pointer;
   transition: all 0.2s;
 }
 .settings-item:hover {
-  background: #F9FAFB;
-  border-color: #E5E7EB;
+  background: var(--hover-bg);
+  border-color: var(--border-light);
 }
 .s-icon {
   width: 36px;
@@ -735,14 +870,14 @@ const productivityTrendData = computed(() => {
 .s-title {
   font-size: 14px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-dark);
 }
 .s-desc {
   font-size: 12px;
-  color: #9CA3AF;
+  color: var(--text-muted);
 }
 .s-action {
-  color: #9CA3AF;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
 }
@@ -752,19 +887,19 @@ const productivityTrendData = computed(() => {
 }
 .theme-toggle {
   display: flex;
-  background: #F3F4F6;
+  background: var(--hover-bg);
   border-radius: 6px;
   padding: 2px;
 }
 .t-btn {
   padding: 4px 8px;
   border-radius: 4px;
-  color: #9CA3AF;
+  color: var(--text-muted);
 }
 .t-btn.active {
-  background: white;
-  color: #3B82F6;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  background: var(--card-bg);
+  color: var(--primary);
+  box-shadow: 0 1px 2px var(--shadow-color);
 }
 .t-btn svg { width: 14px; height: 14px; }
 
@@ -790,17 +925,17 @@ const productivityTrendData = computed(() => {
 .ps-dropdown-select {
   font-size: 13px;
   font-weight: 500;
-  color: #3B82F6;
-  background: white;
+  color: var(--primary);
+  background: var(--card-bg);
   padding: 6px 12px;
   border-radius: 6px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--border-light);
   cursor: pointer;
   outline: none;
   font-family: inherit;
 }
 .ps-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -809,7 +944,7 @@ const productivityTrendData = computed(() => {
   font-size: 14px;
   font-weight: 700;
   margin: 0 0 16px 0;
-  color: #111827;
+  color: var(--text-dark);
 }
 
 /* Sidebar Charts */
@@ -830,12 +965,12 @@ const productivityTrendData = computed(() => {
 .dc-value {
   font-size: 24px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-dark);
   line-height: 1;
 }
 .dc-label {
   font-size: 12px;
-  color: #6B7280;
+  color: var(--text-muted);
 }
 .overview-legend {
   width: 100%;
@@ -856,12 +991,12 @@ const productivityTrendData = computed(() => {
   margin-right: 8px;
 }
 .l-label {
-  color: #4B5563;
+  color: var(--text-muted);
   flex-grow: 1;
 }
 .l-val {
   font-weight: 600;
-  color: #111827;
+  color: var(--text-dark);
 }
 .completion-rate-wrapper {
   display: flex;
@@ -877,17 +1012,17 @@ const productivityTrendData = computed(() => {
 .rc-value {
   font-size: 16px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-dark);
 }
 .cr-info h5 {
   margin: 0 0 4px 0;
   font-size: 14px;
-  color: #111827;
+  color: var(--text-dark);
 }
 .cr-info p {
   margin: 0;
   font-size: 12px;
-  color: #6B7280;
+  color: var(--text-muted);
   line-height: 1.4;
 }
 .ps-full-report-btn {
@@ -895,13 +1030,13 @@ const productivityTrendData = computed(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  color: #3B82F6;
-  border-color: #BFDBFE;
-  background: #EFF6FF;
+  color: var(--primary);
+  border-color: var(--border-light);
+  background: var(--hover-bg);
   font-weight: 600;
 }
 .ps-full-report-btn:hover {
-  background: #DBEAFE;
+  background: var(--active-bg);
 }
 
 /* Modal */
@@ -915,11 +1050,44 @@ const productivityTrendData = computed(() => {
   z-index: 1000;
 }
 .modal-content {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
   max-height: 90vh;
   overflow-y: auto;
+  padding: 32px;
+}
+.password-criteria-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+.criteria-item {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+.criteria-item svg {
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  stroke: var(--text-muted);
+  transition: stroke 0.2s;
+}
+.criteria-item.met {
+  color: var(--stat-green-text);
+}
+.criteria-item.met svg {
+  stroke: var(--stat-green-text);
+}
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 32px;
 }
 
 @media (max-width: 1200px) {
@@ -947,7 +1115,7 @@ const productivityTrendData = computed(() => {
     padding: 16px;
     margin: -20px;
     gap: 16px;
-    background: #F5F6FA;
+    background: var(--bg-main);
     overflow-x: hidden;
   }
 
@@ -989,7 +1157,7 @@ const productivityTrendData = computed(() => {
     padding: 3px 8px;
   }
   .mobile-card-arrow {
-    color: #9CA3AF;
+    color: var(--text-muted);
     background: none;
     border: none;
     cursor: pointer;
@@ -1004,7 +1172,7 @@ const productivityTrendData = computed(() => {
   .profile-stats-grid {
     grid-template-columns: repeat(4, 1fr);
     gap: 0;
-    background: white;
+    background: var(--card-bg);
     border-radius: 16px;
     padding: 16px 8px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -1013,7 +1181,7 @@ const productivityTrendData = computed(() => {
     box-shadow: none;
     border-radius: 0;
     padding: 8px 4px;
-    border-right: 1px solid #F3F4F6;
+    border-right: 1px solid var(--border-light);
   }
   .profile-stat-card:last-child {
     border-right: none;
@@ -1050,7 +1218,7 @@ const productivityTrendData = computed(() => {
   .settings-col-title {
     font-size: 14px;
     font-weight: 600;
-    color: #6B7280;
+    color: var(--text-muted);
     padding: 16px 0 8px 0;
     margin: 0;
     text-transform: uppercase;
@@ -1058,7 +1226,7 @@ const productivityTrendData = computed(() => {
   }
   .settings-list {
     gap: 0;
-    background: white;
+    background: var(--card-bg);
     border-radius: 16px;
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -1066,7 +1234,7 @@ const productivityTrendData = computed(() => {
   .settings-item {
     border-radius: 0;
     border: none;
-    border-bottom: 1px solid #F3F4F6;
+    border-bottom: 1px solid var(--border-light);
     padding: 14px 16px;
   }
   .settings-item:last-child {
@@ -1100,7 +1268,7 @@ const productivityTrendData = computed(() => {
   .ps-title {
     font-size: 16px;
     font-weight: 700;
-    color: #111827;
+    color: var(--text-dark);
   }
   .ps-card {
     padding: 16px;

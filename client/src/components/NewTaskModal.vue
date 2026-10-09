@@ -1,8 +1,9 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useTaskStore } from '@/stores/taskStore'
 import { useCategoryStore } from '@/stores/categoryStore'
 import { useI18n } from 'vue-i18n'
+import WarningConfirmation from './WarningConfirmation.vue'
 
 const props = defineProps({
   isOpen: {
@@ -12,6 +13,10 @@ const props = defineProps({
   taskToEdit: {
     type: Object,
     default: null
+  },
+  prefilledDate: {
+    type: String,
+    default: ''
   }
 })
 
@@ -32,6 +37,55 @@ const showNewListModal = ref(false)
 const newListName = ref('')
 const showEditCategoryModal = ref(false)
 const editCategoryName = ref('')
+const showWarningModal = ref(false)
+const errors = ref({})
+
+// --- Utility: parse a backend UTC date string into a local datetime-local string ---
+const parseBackendDate = (dateStr) => {
+  if (!dateStr) return '';
+  let safeStr = dateStr;
+  if (!safeStr.includes('T')) {
+    safeStr = safeStr.replace(' ', 'T');
+  }
+  if (!safeStr.endsWith('Z') && !safeStr.includes('+') && !safeStr.match(/-\d{2}:\d{2}$/)) {
+    safeStr += 'Z';
+  }
+  const d = new Date(safeStr);
+  const tzoffset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tzoffset).toISOString().slice(0, 16);
+}
+
+const currentLocalTime = computed(() => {
+  const d = new Date()
+  const tzoffset = d.getTimezoneOffset() * 60000
+  return new Date(d.getTime() - tzoffset).toISOString().slice(0, 16)
+})
+
+// --- Warning: show helpful feedback when the selected due date already has tasks ---
+const crowdedScheduleWarning = computed(() => {
+  if (!dueDate.value) return null
+  const selectedDateStr = dueDate.value.substring(0, 10)
+  
+  // Exclude the task being edited from the count
+  const editingId = props.taskToEdit?.id
+  
+  const count = store.tasks.filter(task => {
+    if (!task.due_date) return false
+    if (editingId && task.id === editingId) return false
+    const localStr = parseBackendDate(task.due_date)
+    if (!localStr) return false
+    return localStr.substring(0, 10) === selectedDateStr
+  }).length
+  
+  if (count > 0) {
+    const d = new Date(selectedDateStr + 'T12:00:00')
+    const formattedDate = new Intl.DateTimeFormat(t('locale') || 'en-US', { month: 'long', day: 'numeric' }).format(d)
+    return count === 1
+      ? t('tasks.modal.crowded_warning', { count, date: formattedDate })
+      : t('tasks.modal.crowded_warning_plural', { count, date: formattedDate })
+  }
+  return null
+})
 
 onMounted(async () => {
   if (categoryStore.categories.length === 0) {
@@ -44,6 +98,31 @@ onMounted(async () => {
   if (categoryStore.categories.length > 0) {
     category.value = categoryStore.categories[0].name
   }
+  // Ensure tasks are loaded so the crowded schedule warning can work
+  if (store.tasks.length === 0) {
+    try {
+      await store.fetchTasks()
+    } catch (error) {
+      console.error('Failed to load tasks:', error)
+    }
+  }
+})
+
+watch(startDate, (newVal) => {
+  if (newVal && dueDate.value && new Date(dueDate.value) < new Date(newVal)) {
+    dueDate.value = newVal
+  }
+})
+
+watch(() => props.isOpen, (newVal) => {
+  if (newVal && !props.taskToEdit) {
+    if (props.prefilledDate) {
+      dueDate.value = props.prefilledDate
+    } else {
+      dueDate.value = ''
+      startDate.value = ''
+    }
+  }
 })
 
 // Populate form when taskToEdit changes
@@ -53,16 +132,12 @@ watch(() => props.taskToEdit, (newVal) => {
     description.value = newVal.description || ''
     category.value = newVal.category?.name || ''
     if (newVal.start_date) {
-      const d = new Date(newVal.start_date)
-      const tzoffset = d.getTimezoneOffset() * 60000
-      startDate.value = new Date(d.getTime() - tzoffset).toISOString().slice(0, 16)
+      startDate.value = parseBackendDate(newVal.start_date)
     } else {
       startDate.value = ''
     }
     if (newVal.due_date) {
-      const d = new Date(newVal.due_date)
-      const tzoffset = d.getTimezoneOffset() * 60000
-      dueDate.value = new Date(d.getTime() - tzoffset).toISOString().slice(0, 16)
+      dueDate.value = parseBackendDate(newVal.due_date)
     } else {
       dueDate.value = ''
     }
@@ -82,8 +157,12 @@ watch(() => props.taskToEdit, (newVal) => {
   }
 })
 
-const handleAddCategory = async () => {
-  if (!newListName.value.trim()) return
+const handleCategorySubmit = async () => {
+  errors.value.newCategory = ''
+  if (!newListName.value.trim()) {
+    errors.value.newCategory = 'Category name is required'
+    return
+  }
 
   const success = await categoryStore.createCategory(newListName.value.trim())
   if (success) {
@@ -94,21 +173,14 @@ const handleAddCategory = async () => {
   }
 }
 
-const closeCategoryModal = () => {
-  showNewListModal.value = false
-  newListName.value = ''
-  categoryStore.error = null
-}
-
-const openEditCategoryModal = () => {
+const handleEditCategorySubmit = async () => {
+  errors.value.editCategory = ''
+  if (!editCategoryName.value.trim()) {
+    errors.value.editCategory = 'Category name is required'
+    return
+  }
+  
   if (!category.value) return
-  editCategoryName.value = category.value
-  showEditCategoryModal.value = true
-}
-
-const handleEditCategory = async () => {
-  if (!editCategoryName.value.trim() || !category.value) return
-
   const categoryId = categoryStore.getCategoryIdByName(category.value)
   if (!categoryId) return
 
@@ -119,6 +191,18 @@ const handleEditCategory = async () => {
     categoryStore.error = null
     showEditCategoryModal.value = false
   }
+}
+
+const openEditCategoryModal = () => {
+  if (!category.value) return
+  editCategoryName.value = category.value
+  showEditCategoryModal.value = true
+}
+
+const closeCategoryModal = () => {
+  showNewListModal.value = false
+  newListName.value = ''
+  categoryStore.error = null
 }
 
 const closeEditCategoryModal = () => {
@@ -140,10 +224,45 @@ const closeTaskModal = () => {
   startDate.value = ''
   dueDate.value = ''
   priority.value = ''
+  errors.value = {}
 }
 
-const handleSubmit = async () => {
-  if (!title.value.trim()) return
+const formatForBackend = (val) => {
+  if (!val) return null;
+  return new Date(val).toISOString();
+}
+
+const validate = () => {
+  errors.value = {}
+
+  if (!title.value.trim()) {
+    errors.value.title = 'Title is required'
+  }
+
+  if (startDate.value && dueDate.value) {
+    const start = new Date(startDate.value)
+    const due = new Date(dueDate.value)
+    if (start > due) {
+      errors.value.date = 'Start date cannot be after due date'
+    }
+  }
+
+  return Object.keys(errors.value).length === 0
+}
+
+const handleSubmit = () => {
+  if (!validate()) return
+
+  if (crowdedScheduleWarning.value) {
+    showWarningModal.value = true
+    return
+  }
+
+  executeSubmit()
+}
+
+const executeSubmit = async () => {
+  showWarningModal.value = false
 
   const categoryId = categoryStore.getCategoryIdByName(category.value)
 
@@ -152,16 +271,16 @@ const handleSubmit = async () => {
       ...props.taskToEdit,
       title: title.value,
       category_id: categoryId,
-      start_date: startDate.value || null,
-      due_date: dueDate.value || null,
+      start_date: formatForBackend(startDate.value),
+      due_date: formatForBackend(dueDate.value),
       priority: priority.value || null
     })
   } else {
     await store.createTask(
       title.value,
       categoryId,
-      startDate.value || null,
-      dueDate.value || null,
+      formatForBackend(startDate.value),
+      formatForBackend(dueDate.value),
       priority.value || null
     )
   }
@@ -191,14 +310,27 @@ const handleSubmit = async () => {
             {{ store.error }}
           </div>
 
-          <form @submit.prevent="handleSubmit" class="task-form">
+          <form novalidate @submit.prevent="handleSubmit" class="task-form">
             <div class="form-group full-width">
               <label class="form-label">{{ t('tasks.modal.title_label') }} <span class="required">*</span></label>
               <div class="input-with-icon">
                 <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
-                <input v-model="title" type="text" :placeholder="t('tasks.modal.title_placeholder')" class="form-input" required />
+                <input 
+                  v-model="title" 
+                  type="text" 
+                  :placeholder="t('tasks.modal.title_placeholder')" 
+                  class="form-input" 
+                  :class="{ 'input-error': errors.title }"
+                  @input="errors.title = ''"
+                />
+              </div>
+              <div v-if="errors.title" class="error-text">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {{ errors.title }}
               </div>
             </div>
 
@@ -256,29 +388,42 @@ const handleSubmit = async () => {
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">{{ t('tasks.modal.start_date') }}</label>
-                <div class="input-with-icon select-wrapper">
+                <div class="input-with-icon">
                   <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="#10B981">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <input v-model="startDate" type="datetime-local" class="form-input" />
-                  <svg class="chevron-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
+                  <input 
+                    v-model="startDate" 
+                    type="datetime-local" 
+                    class="form-input"
+                    :class="{ 'input-error': errors.date }"
+                    @change="errors.date = ''"
+                  />
                 </div>
               </div>
 
               <div class="form-group">
                 <label class="form-label">{{ t('tasks.modal.due_date') }}</label>
-                <div class="input-with-icon select-wrapper">
-                  <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="#3B82F6">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <div class="input-with-icon">
+                  <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="#EF4444">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <input v-model="dueDate" type="datetime-local" class="form-input" :min="startDate || new Date().toISOString().slice(0, 16)" />
-                  <svg class="chevron-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
+                  <input 
+                    v-model="dueDate" 
+                    type="datetime-local" 
+                    class="form-input"
+                    :class="{ 'input-error': errors.date }"
+                    @change="errors.date = ''"
+                  />
                 </div>
               </div>
+            </div>
+            
+            <div v-if="errors.date" class="error-text" style="margin-top: -12px; margin-bottom: 16px;">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {{ errors.date }}
             </div>
 
             <div class="form-group full-width">
@@ -316,11 +461,26 @@ const handleSubmit = async () => {
           <span>{{ categoryStore.error }}</span>
         </div>
 
-        <input v-model="newListName" type="text" :placeholder="t('tasks.modal.cat_name_placeholder')" class="search-input form-input" style="width: 100%; margin-bottom: 24px; padding: 12px; box-sizing: border-box;" @keyup.enter="handleAddCategory" @input="categoryStore.error = null" />
+        <input 
+          v-model="newListName" 
+          type="text" 
+          :placeholder="t('tasks.modal.cat_name_placeholder')" 
+          class="search-input form-input" 
+          style="width: 100%; margin-bottom: 8px; padding: 12px; box-sizing: border-box;" 
+          :class="{ 'input-error': errors.newCategory }" 
+          @keyup.enter="handleCategorySubmit" 
+          @input="categoryStore.error = null; errors.newCategory = ''" 
+        />
+        <div v-if="errors.newCategory" class="error-text" style="margin-bottom: 16px;">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {{ errors.newCategory }}
+        </div>
         
         <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 12px;">
           <button @click="closeCategoryModal" class="btn modal-cancel-btn btn-cancel" style="border: none; background: transparent; padding: 8px 16px;">{{ t('tasks.modal.btn_cancel') }}</button>
-          <button @click="handleAddCategory" class="btn btn-primary btn-submit" style="padding: 8px 24px; border-radius: 999px; background: #3B82F6; color: white; border: none;" :disabled="categoryStore.loading">
+          <button @click="handleCategorySubmit" class="btn btn-primary btn-submit" style="padding: 8px 24px; border-radius: 999px; background: #3B82F6; color: white; border: none;" :disabled="categoryStore.loading">
             {{ categoryStore.loading ? t('tasks.modal.btn_adding') : t('tasks.modal.btn_add') }}
           </button>
         </div>
@@ -338,16 +498,39 @@ const handleSubmit = async () => {
           <span>{{ categoryStore.error }}</span>
         </div>
 
-        <input v-model="editCategoryName" type="text" :placeholder="t('tasks.modal.cat_name_placeholder')" class="search-input form-input" style="width: 100%; margin-bottom: 24px; padding: 12px; box-sizing: border-box;" @keyup.enter="handleEditCategory" @input="categoryStore.error = null" />
+        <input 
+          v-model="editCategoryName" 
+          type="text" 
+          :placeholder="t('tasks.modal.cat_name_placeholder')" 
+          class="search-input form-input" 
+          style="width: 100%; margin-bottom: 8px; padding: 12px; box-sizing: border-box;" 
+          :class="{ 'input-error': errors.editCategory }" 
+          @keyup.enter="handleEditCategorySubmit" 
+          @input="categoryStore.error = null; errors.editCategory = ''" 
+        />
+        <div v-if="errors.editCategory" class="error-text" style="margin-bottom: 16px;">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {{ errors.editCategory }}
+        </div>
         
         <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 12px;">
           <button @click="closeEditCategoryModal" class="btn modal-cancel-btn btn-cancel" style="border: none; background: transparent; padding: 8px 16px;">{{ t('tasks.modal.btn_cancel') }}</button>
-          <button @click="handleEditCategory" class="btn btn-primary btn-submit" style="padding: 8px 24px; border-radius: 999px; background: #3B82F6; color: white; border: none;" :disabled="categoryStore.loading">
+          <button @click="handleEditCategorySubmit" class="btn btn-primary btn-submit" style="padding: 8px 24px; border-radius: 999px; background: #3B82F6; color: white; border: none;" :disabled="categoryStore.loading">
             {{ categoryStore.loading ? t('tasks.modal.btn_updating') : t('tasks.modal.btn_update') }}
           </button>
         </div>
       </div>
     </div>
+    <!-- Warning Confirmation Modal -->
+    <WarningConfirmation
+      :show="showWarningModal"
+      :message="crowdedScheduleWarning"
+      :confirm-text="taskToEdit ? t('tasks.modal.btn_update_anyway') : t('tasks.modal.btn_create_anyway')"
+      @cancel="showWarningModal = false"
+      @confirm="executeSubmit"
+    />
   </Teleport>
 </template>
 
@@ -371,7 +554,7 @@ const handleSubmit = async () => {
   max-width: 420px;
   width: 100%;
   padding: 0;
-  background-color: white;
+  background-color: var(--card-bg);
   overflow: hidden;
   border-radius: 20px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -418,7 +601,7 @@ const handleSubmit = async () => {
 
 .modal-body {
   padding: 32px;
-  background: white;
+  background: var(--card-bg);
   max-height: calc(100vh - 120px);
   overflow-y: auto;
 }
@@ -448,11 +631,11 @@ const handleSubmit = async () => {
 .form-label {
   font-size: 14px;
   font-weight: 600;
-  color: #4B5563;
+  color: var(--text-muted);
 }
 
 .required {
-  color: #EF4444;
+  color: var(--stat-red-text);
 }
 
 .input-with-icon {
@@ -466,7 +649,7 @@ const handleSubmit = async () => {
   left: 14px;
   width: 20px;
   height: 20px;
-  color: #9CA3AF;
+  color: var(--text-muted);
   pointer-events: none;
 }
 
@@ -475,18 +658,18 @@ const handleSubmit = async () => {
   right: 14px;
   width: 16px;
   height: 16px;
-  color: #9CA3AF;
+  color: var(--text-muted);
   pointer-events: none;
 }
 
 .form-input {
   width: 100%;
   padding: 12px 14px 12px 42px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--border-light);
   border-radius: 12px;
   font-size: 15px;
-  color: #1F2937;
-  background: #F9FAFB;
+  color: var(--text-dark);
+  background: var(--hover-bg);
   transition: all 0.2s;
 }
 
@@ -497,8 +680,8 @@ const handleSubmit = async () => {
 
 .form-input:focus {
   outline: none;
-  border-color: #3B82F6;
-  background: white;
+  border-color: var(--primary);
+  background: var(--card-bg);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -518,9 +701,9 @@ const handleSubmit = async () => {
 }
 
 .add-category-btn {
-  background: #EFF6FF;
-  border: 1px solid #BFDBFE;
-  color: #3B82F6;
+  background: var(--stat-blue-bg);
+  border: 1px solid var(--primary);
+  color: var(--primary);
   width: 46px;
   border-radius: 12px;
   display: flex;
@@ -531,16 +714,16 @@ const handleSubmit = async () => {
 }
 
 .add-category-btn:hover {
-  background: #DBEAFE;
-  border-color: #93C5FD;
+  background: var(--stat-blue-bg);
+  border-color: var(--primary);
 }
 
 .edit-category-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: #F3F4F6;
-  border-color: #E5E7EB;
-  color: #9CA3AF;
+  background: var(--hover-bg);
+  border-color: var(--border-light);
+  color: var(--text-muted);
 }
 
 .form-actions {
@@ -549,14 +732,14 @@ const handleSubmit = async () => {
   gap: 12px;
   margin-top: 12px;
   padding-top: 24px;
-  border-top: 1px solid #E5E7EB;
+  border-top: 1px solid var(--border-light);
 }
 
 .btn-cancel {
   padding: 10px 20px;
-  border: 1px solid #E5E7EB;
-  background: white;
-  color: #4B5563;
+  border: 1px solid var(--border-light);
+  background: var(--card-bg);
+  color: var(--text-muted);
   border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -564,7 +747,7 @@ const handleSubmit = async () => {
 }
 
 .btn-cancel:hover {
-  background: #F3F4F6;
+  background: var(--hover-bg);
 }
 
 .btn-submit {
@@ -598,8 +781,8 @@ const handleSubmit = async () => {
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: #FEF2F2;
-  color: #DC2626;
+  background: var(--stat-red-bg);
+  color: var(--danger-text);
   border-radius: 12px;
   margin-bottom: 20px;
   font-size: 14px;
@@ -627,6 +810,39 @@ const handleSubmit = async () => {
   
   .modal-body {
     padding: 24px;
+  }
+}
+
+/* Schedule Warning */
+.schedule-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--stat-yellow-bg);
+  color: var(--stat-yellow-text);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  animation: warningSlideIn 0.3s ease-out;
+}
+
+.schedule-warning-icon {
+  flex-shrink: 0;
+  color: var(--stat-yellow-text);
+}
+
+@keyframes warningSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

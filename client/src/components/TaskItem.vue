@@ -29,11 +29,23 @@ onMounted(() => {
   }
 })
 
+const parseBackendDate = (dateStr) => {
+  if (!dateStr) return null;
+  let safeStr = dateStr;
+  if (!safeStr.includes('T')) {
+    safeStr = safeStr.replace(' ', 'T');
+  }
+  if (!safeStr.endsWith('Z') && !safeStr.includes('+') && !safeStr.match(/-\d{2}:\d{2}$/)) {
+    safeStr += 'Z';
+  }
+  return new Date(safeStr);
+}
+
 // Format date in international format
 const formatDate = (dateString) => {
   if (!dateString) return '—'
 
-  const date = new Date(dateString)
+  const date = parseBackendDate(dateString)
   const isCurrentYear = date.getFullYear() === new Date().getFullYear()
   
   return date.toLocaleDateString(undefined, {
@@ -45,7 +57,7 @@ const formatDate = (dateString) => {
 
 const isOverdue = (dateString) => {
   if (props.task.status === 'completed' || !dateString) return false;
-  const due = new Date(dateString);
+  const due = parseBackendDate(dateString);
   due.setHours(0,0,0,0);
   const today = new Date();
   today.setHours(0,0,0,0);
@@ -56,7 +68,7 @@ const isOverdue = (dateString) => {
 const isToday = (dateString) => {
   if (!dateString) return false
   const today = new Date()
-  const date = new Date(dateString)
+  const date = parseBackendDate(dateString)
   return date.toDateString() === today.toDateString()
 }
 
@@ -65,7 +77,7 @@ const isTomorrow = (dateString) => {
   if (!dateString) return false
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
-  const date = new Date(dateString)
+  const date = parseBackendDate(dateString)
   return date.toDateString() === tomorrow.toDateString()
 }
 
@@ -80,10 +92,10 @@ const getRelativeDate = computed(() => {
 })
 
 const categoryColors = {
-  General:  { bg: '#EFF6FF', color: '#1D4ED8' },
-  Work:     { bg: '#FEF9C3', color: '#854D0E' },
-  Personal: { bg: '#F0FDF4', color: '#15803D' },
-  Urgent:   { bg: '#FEF2F2', color: '#B91C1C' },
+  General:  { bg: 'var(--stat-blue-bg)', color: 'var(--stat-blue-text)' },
+  Work:     { bg: 'var(--stat-yellow-bg)', color: 'var(--stat-yellow-text)' },
+  Personal: { bg: 'var(--stat-green-bg)', color: 'var(--stat-green-text)' },
+  Urgent:   { bg: 'var(--stat-red-bg)', color: 'var(--stat-red-text)' },
 }
 
 const getCategoryStyle = (cat) => {
@@ -94,7 +106,7 @@ const getCategoryStyle = (cat) => {
 // Format time
 const formatTime = (dateString) => {
   if (!dateString) return null
-  const date = new Date(dateString)
+  const date = parseBackendDate(dateString)
   return date.toLocaleTimeString(undefined, {
     hour: 'numeric',
     minute: '2-digit'
@@ -103,9 +115,9 @@ const formatTime = (dateString) => {
 
 // Priority config
 const priorityConfig = {
-  low:    { label: 'Low',    bg: '#F0FDF4', color: '#15803D' },
-  medium: { label: 'Medium', bg: '#FFFBEB', color: '#B45309' },
-  high:   { label: 'High',   bg: '#FEF2F2', color: '#B91C1C' },
+  low:    { label: 'Low',    bg: 'var(--stat-green-bg)', color: 'var(--stat-green-text)' },
+  medium: { label: 'Medium', bg: 'var(--stat-yellow-bg)', color: 'var(--stat-yellow-text)' },
+  high:   { label: 'High',   bg: 'var(--stat-red-bg)', color: 'var(--stat-red-text)' },
 }
 
 const getPriorityStyle = (priority) => {
@@ -247,7 +259,7 @@ const toggleTask = async () => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 0;
-  border-bottom: 1px solid #F3F4F6;
+  border-bottom: 1px solid var(--border-light);
   gap: 16px;
   position: relative;
 }
@@ -256,10 +268,10 @@ const toggleTask = async () => {
 .task-item-row.is-grid {
   flex-direction: column;
   align-items: flex-start;
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--border-light);
   border-radius: 12px;
   padding: 16px;
-  background: white;
+  background: var(--card-bg);
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
 
@@ -299,7 +311,7 @@ const toggleTask = async () => {
   justify-content: space-between;
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid #F3F4F6;
+  border-top: 1px solid var(--border-light);
 }
 
 .task-item-row:last-child {
@@ -326,7 +338,7 @@ const toggleTask = async () => {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid #D1D5DB;
+  border: 2px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -336,13 +348,13 @@ const toggleTask = async () => {
 }
 
 .custom-checkbox.checked {
-  background-color: #10B981;
-  border-color: #10B981;
+  background-color: var(--success-text);
+  border-color: var(--success-text);
 }
 
 .task-title {
   font-weight: 600;
-  color: #1F2937;
+  color: var(--text-dark);
   font-size: 15px;
   white-space: nowrap;
   overflow: hidden;
@@ -351,7 +363,7 @@ const toggleTask = async () => {
 }
 
 .completed-text {
-  color: #9CA3AF;
+  color: var(--text-muted);
   text-decoration: line-through;
 }
 
@@ -367,20 +379,20 @@ const toggleTask = async () => {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #6B7280;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .category-tag svg {
-  color: #3B82F6; /* Blue folder icon */
+  color: var(--primary); /* Blue folder icon */
 }
 
 /* Date Range Badge UI */
 .date-range-badge {
   display: inline-flex;
   align-items: stretch;
-  background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-light);
   border-radius: 6px;
   overflow: hidden;
   font-size: 11px;
@@ -396,7 +408,7 @@ const toggleTask = async () => {
 
 .date-label {
   font-weight: 700;
-  color: #94A3B8;
+  color: var(--text-muted);
   text-transform: uppercase;
   font-size: 9px;
   letter-spacing: 0.5px;
@@ -404,41 +416,41 @@ const toggleTask = async () => {
 
 .date-value {
   font-weight: 600;
-  color: #475569;
+  color: var(--text-muted);
 }
 
 .date-separator {
-  color: #CBD5E1;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   padding: 0 4px;
-  background-color: #F8FAFC;
-  border-left: 1px solid #F1F5F9;
-  border-right: 1px solid #F1F5F9;
+  background-color: var(--hover-bg);
+  border-left: 1px solid var(--border-light);
+  border-right: 1px solid var(--border-light);
 }
 
 .time-text {
-  color: #94A3B8;
+  color: var(--text-muted);
   margin-left: 2px;
   font-weight: 500;
   font-size: 10px;
 }
 
 .due-date-item.is-overdue {
-  background-color: #FEF2F2;
+  background-color: var(--danger-bg);
 }
 .due-date-item.is-overdue .date-label {
-  color: #F87171;
+  color: var(--danger-text);
 }
 .due-date-item.is-overdue .date-value {
-  color: #DC2626;
+  color: var(--danger-text);
 }
 .due-date-item.is-overdue .time-text {
-  color: #F87171;
+  color: var(--danger-text);
 }
 
 .start-date-item {
-  background-color: #FAFAFA;
+  background-color: var(--hover-bg);
 }
 
 .task-actions-area {
@@ -455,9 +467,9 @@ const toggleTask = async () => {
   font-weight: 600;
 }
 
-.priority-high { background-color: #FEE2E2; color: #DC2626; }
-.priority-medium { background-color: #FFEDD5; color: #EA580C; }
-.priority-low { background-color: #DCFCE7; color: #16A34A; }
+.priority-high { background-color: var(--stat-red-bg); color: var(--danger-text); }
+.priority-medium { background-color: var(--stat-orange-bg); color: var(--stat-orange-text); }
+.priority-low { background-color: var(--stat-green-bg); color: var(--stat-green-text); }
 
 .actions-wrapper {
   position: relative;
@@ -469,7 +481,7 @@ const toggleTask = async () => {
 .action-menu-btn {
   background: transparent;
   border: none;
-  color: #6B7280;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 6px;
   border-radius: 6px;
@@ -480,8 +492,8 @@ const toggleTask = async () => {
 }
 
 .action-menu-btn:hover {
-  background-color: #F3F4F6;
-  color: #374151;
+  background-color: var(--hover-bg);
+  color: var(--text-dark);
 }
 
 .menu-overlay {
@@ -497,8 +509,8 @@ const toggleTask = async () => {
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
-  background: white;
-  border: 1px solid #E5E7EB;
+  background: var(--card-bg);
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   min-width: 150px;
@@ -521,7 +533,7 @@ const toggleTask = async () => {
   padding: 8px 12px;
   font-size: 13px;
   font-weight: 500;
-  color: #4B5563;
+  color: var(--text-muted);
   cursor: pointer;
   border-radius: 4px;
   transition: background 0.15s;
@@ -529,15 +541,15 @@ const toggleTask = async () => {
 }
 
 .dropdown-item:hover {
-  background-color: #F3F4F6;
+  background-color: var(--hover-bg);
 }
 
 .delete-item {
-  color: #DC2626;
+  color: var(--danger-text);
 }
 
 .delete-item:hover {
-  background-color: #FEF2F2;
+  background-color: var(--danger-bg);
 }
 
 @media (max-width: 768px) {

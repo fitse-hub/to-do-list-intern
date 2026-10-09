@@ -39,7 +39,7 @@ const computedStyle = computed(() => {
 
 <style scoped>
 .skeleton-loader {
-  background-color: #E5E7EB; /* tailwind gray-200 */
+  background-color: var(--active-bg); /* tailwind gray-200 */
   position: relative;
   overflow: hidden;
 }

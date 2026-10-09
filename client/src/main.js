@@ -10,6 +10,7 @@ import router from './router'
 // Import auth store to initialize authentication
 import { useAuthStore } from './stores/authStore'
 import { useLanguageStore } from './stores/languageStore'
+import { useThemeStore } from './stores/themeStore'
 import './index.css'
 import i18n from './i18n'
 
@@ -47,6 +48,10 @@ authStore.initAuth()
 // Initialize language preferences
 const languageStore = useLanguageStore()
 languageStore.initLanguage()
+
+// Initialize theme
+const themeStore = useThemeStore()
+themeStore.initTheme()
 
 // Mount the app to the DOM element with id="app"
 app.mount('#app')

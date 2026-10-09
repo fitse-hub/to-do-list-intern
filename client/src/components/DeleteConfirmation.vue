@@ -78,7 +78,7 @@ defineEmits(['cancel', 'confirm'])
 
 /* Modal Card with Glassmorphism / Premium Look */
 .delete-modal-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 24px;
   width: 100%;
   max-width: 420px;
@@ -128,14 +128,14 @@ defineEmits(['cancel', 'confirm'])
   margin: 0 0 12px;
   font-size: 20px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-dark);
   letter-spacing: -0.01em;
 }
 
 .delete-modal-message {
   margin: 0;
   font-size: 15px;
-  color: #6B7280;
+  color: var(--text-muted);
   line-height: 1.6;
 }
 
@@ -144,15 +144,15 @@ defineEmits(['cancel', 'confirm'])
   display: flex;
   padding: 20px 32px 32px;
   gap: 16px;
-  background-color: #F9FAFB;
-  border-top: 1px solid #F3F4F6;
+  background-color: var(--hover-bg);
+  border-top: 1px solid var(--border-light);
 }
 
 .btn-cancel {
   flex: 1;
-  background-color: white;
-  border: 1px solid #E5E7EB;
-  color: #4B5563;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
   font-weight: 600;
   font-size: 15px;
   padding: 12px 0;
@@ -163,9 +163,9 @@ defineEmits(['cancel', 'confirm'])
 }
 
 .btn-cancel:hover {
-  background-color: #F9FAFB;
-  border-color: #D1D5DB;
-  color: #111827;
+  background-color: var(--hover-bg);
+  border-color: var(--primary);
+  color: var(--text-dark);
 }
 
 .btn-cancel:active {

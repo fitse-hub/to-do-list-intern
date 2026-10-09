@@ -195,10 +195,10 @@ const heatmapDays = computed(() => {
 });
 
 const getHeatmapColor = (level) => {
-  if (level === 1) return '#86efac'; // light green
-  if (level === 2) return '#22c55e'; // green
+  if (level === 1) return 'var(--stat-green-bg)'; // light green
+  if (level === 2) return 'var(--stat-green-text)'; // green
   if (level === 3) return '#16a34a'; // dark green
-  return '#f1f5f9'; // gray
+  return 'var(--hover-bg)'; // gray
 };
 
 const topCategory = computed(() => {
@@ -276,8 +276,8 @@ const bestDay = computed(() => {
       <template v-else>
       <div class="stat-card" style="--curve-color: rgba(59, 130, 246, 0.05);">
         <div class="stat-top">
-          <div class="stat-icon-wrap" style="background: #EFF6FF;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="#3B82F6" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+          <div class="stat-icon-wrap bg-blue-soft text-blue">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
           </div>
         </div>
         <div class="stat-info">
@@ -288,37 +288,37 @@ const bestDay = computed(() => {
 
       <div class="stat-card" style="--curve-color: rgba(34, 197, 94, 0.05);">
         <div class="stat-top">
-          <div class="stat-icon-wrap" style="background: #F0FDF4;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="#22C55E" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <div class="stat-icon-wrap bg-green-soft text-green">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
         </div>
         <div class="stat-info">
           <span class="stat-label">{{ t('reports.stats.completed') }}</span>
-          <span class="stat-value" style="color: #22C55E;">{{ reportStore.summary.completed }}</span>
+          <span class="stat-value text-green">{{ reportStore.summary.completed }}</span>
         </div>
       </div>
 
       <div class="stat-card" style="--curve-color: rgba(239, 68, 68, 0.05);">
         <div class="stat-top">
-          <div class="stat-icon-wrap" style="background: #FEF2F2;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="#EF4444" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <div class="stat-icon-wrap bg-red-soft text-red">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
         </div>
         <div class="stat-info">
           <span class="stat-label">{{ t('reports.stats.failure_rate') }}</span>
-          <span class="stat-value" style="color: #EF4444;">{{ reportStore.summary.failureRate }}%</span>
+          <span class="stat-value text-red">{{ reportStore.summary.failureRate }}%</span>
         </div>
       </div>
 
       <div class="stat-card" style="--curve-color: rgba(139, 92, 246, 0.05);">
         <div class="stat-top">
-          <div class="stat-icon-wrap" style="background: #F5F3FF;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="#8B5CF6" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+          <div class="stat-icon-wrap bg-purple-soft text-purple">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" width="22" height="22"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
           </div>
         </div>
         <div class="stat-info">
           <span class="stat-label">{{ t('reports.stats.productivity_score') }}</span>
-          <span class="stat-value" style="color: #8B5CF6;">{{ reportStore.summary.productivityScore }}%</span>
+          <span class="stat-value text-purple">{{ reportStore.summary.productivityScore }}%</span>
         </div>
       </div>
       </template>
@@ -391,12 +391,12 @@ const bestDay = computed(() => {
         <h3 class="dash-card-title" style="margin-bottom: 16px;">{{ t('reports.insights.heatmap_title') }}</h3>
         <template v-if="reportStore.initialLoading">
           <SkeletonLoader width="100%" height="60px" borderRadius="8px" />
-          <div class="heatmap-legend" style="display: flex; gap: 8px; font-size: 12px; margin-top: 12px; color: #64748B;">
+          <div class="heatmap-legend" style="display: flex; gap: 8px; font-size: 12px; margin-top: 12px; color: var(--text-muted);">
             <SkeletonLoader width="40%" height="16px" />
           </div>
         </template>
         <template v-else>
-        <div class="heatmap-container" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 12px; background: #F8FAFC; border-radius: 8px;">
+        <div class="heatmap-container" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 12px; background: var(--hover-bg); border-radius: 8px;">
           <div 
             v-for="day in heatmapDays" 
             :key="day.date" 
@@ -405,7 +405,7 @@ const bestDay = computed(() => {
             :title="`${day.date}: ${day.completed} completed`"
           ></div>
         </div>
-        <div class="heatmap-legend" style="display: flex; gap: 8px; font-size: 12px; margin-top: 12px; color: #64748B;">
+        <div class="heatmap-legend" style="display: flex; gap: 8px; font-size: 12px; margin-top: 12px; color: var(--text-muted);">
           <span>{{ t('reports.insights.less') }}</span>
           <div class="heatmap-cell" :style="{ backgroundColor: getHeatmapColor(0) }"></div>
           <div class="heatmap-cell" :style="{ backgroundColor: getHeatmapColor(1) }"></div>
@@ -424,7 +424,7 @@ const bestDay = computed(() => {
 <style scoped>
 .reports-controls {
   margin-top: 24px;
-  background: white;
+  background: var(--card-bg);
   padding: 16px;
   border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
@@ -441,7 +441,7 @@ const bestDay = computed(() => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 0;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .insight-item:last-child {
@@ -450,12 +450,12 @@ const bestDay = computed(() => {
 
 .insight-label {
   font-weight: 500;
-  color: #475569;
+  color: var(--text-muted);
 }
 
 .insight-value {
   font-weight: 600;
-  color: #0F172A;
+  color: var(--text-dark);
 }
 
 .heatmap-cell {

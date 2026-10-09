@@ -6,6 +6,8 @@
     "reports": "ሪፖርቶች",
     "settings": "ቅንብሮች",
     "profile": "መገለጫ",
+    "calendar": "ቀን መቁጠሪያ",
+    "open_calendar": "ቀን መቁጠሪያ ክፈት (C)",
     "logout": "ውጣ"
   },
   "dashboard": {
@@ -118,7 +120,11 @@
       "edit_category": "ምድብ አስተካክል",
       "cat_name_placeholder": "የምድብ ስም ያስገቡ",
       "btn_add": "አክል",
-      "btn_adding": "በማከል ላይ..."
+      "btn_adding": "በማከል ላይ...",
+      "crowded_warning": "⚠ በ {date} ላይ {count} ተግባር አለዎት።",
+      "crowded_warning_plural": "⚠ በ {date} ላይ {count} ተግባራት አሎት።",
+      "btn_create_anyway": "በማንኛውም ሁኔታ ፍጠር",
+      "btn_update_anyway": "በማንኛውም ሁኔታ አዘምን"
     },
     "priority": {
       "high": "ከፍተኛ",
@@ -219,6 +225,74 @@
       "confirm_password": "የይለፍ ቃል ያረጋግጡ",
       "saving": "በማስቀመጥ ላይ...",
       "update_btn": "መገለጫ አዘምን"
+    }
+  },
+  "calendar": {
+    "header": {
+      "today": "ዛሬ",
+      "day": "ቀን",
+      "week": "ሳምንት",
+      "month": "ወር",
+      "year": "ዓመት",
+      "default": "ነባሪ",
+      "search_placeholder": "ተግባራትን ይፈልጉ...",
+      "new_task": "አዲስ ተግባር"
+    },
+    "sidebar": {
+      "projects": "ፕሮጀክቶች",
+      "loading": "በመጫን ላይ...",
+      "no_categories": "ምንም ምድቦች የሉም",
+      "priority": "ቅድሚያ",
+      "priorities": {
+        "high": "ከፍተኛ",
+        "medium": "መካከለኛ",
+        "low": "ዝቅተኛ"
+      },
+      "status": "ሁኔታ",
+      "statuses": {
+        "todo": "በመጠባበቅ ላይ",
+        "completed": "የተጠናቀቀ",
+        "failed": "ያልተሳካ",
+        "archived": "ማህደር ገብቷል"
+      },
+      "clear_filters": "ማጣሪያዎችን ያጽዱ",
+      "legend": "መግለጫ",
+      "overdue": "ያለፈበት"
+    },
+    "detail": {
+      "description": "መግለጫ",
+      "no_description": "ምንም መግለጫ አልተሰጠም።",
+      "priority": "ቅድሚያ",
+      "none": "ምንም",
+      "status": "ሁኔታ",
+      "project": "ፕሮጀክት",
+      "due_date": "የማስረከቢያ ቀን",
+      "start_date": "የመጀመሪያ ቀን",
+      "created": "የተፈጠረው",
+      "click_to_close": "ለመዝጋት ውጪ ጠቅ ያድርጉ"
+    },
+    "drawer": {
+      "task_scheduled": "ተግባር ተይዟል",
+      "tasks_scheduled": "ተግባራት ተይዘዋል",
+      "no_tasks": "በዚህ ቀን ምንም ተግባራት የሉም",
+      "add_task": "ወደዚህ ቀን ተግባር ያክሉ"
+    },
+    "shortcuts": {
+      "navigate": "ዳስስ",
+      "today": "ዛሬ",
+      "new_task": "አዲስ ተግባር",
+      "close": "ዝጋ"
+    },
+    "common": {
+      "task_count": "{count} ተግባር",
+      "tasks_count": "{count} ተግባራት",
+      "add_task": "ተግባር ያክሉ",
+      "all_day": "ሙሉ ቀን / ሰዓት አልተዘጋጀም",
+      "more_tasks": "+{count} ተጨማሪ",
+      "show_less": "ጥቂት አሳይ"
+    },
+    "empty": {
+      "no_tasks_period": "በዚህ ጊዜ ውስጥ ምንም ተግባር አልተገኘም።"
     }
   },
   "buttons": {

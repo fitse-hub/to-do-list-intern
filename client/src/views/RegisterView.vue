@@ -7,20 +7,59 @@
         {{ authStore.error }}
       </div>
 
-      <form @submit.prevent="handleRegister">
+      <form novalidate @submit.prevent="handleRegister">
         <div class="form-group">
-          <label for="name">name</label>
-          <input id="name" v-model="name" type="text" placeholder="Enter your name" required/>
+          <label for="name">Name</label>
+          <input
+            id="name"
+            v-model="name"
+            type="text"
+            placeholder="Enter your name"
+            :class="{ 'input-error': errors.name }"
+            @input="errors.name = ''"
+          />
+          <div v-if="errors.name" class="error-text">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {{ errors.name }}
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="email">email</label>
-          <input id="email" v-model="email" type="email" placeholder="Enter your email" required />
+          <label for="email">Email</label>
+          <input
+            id="email"
+            v-model="email"
+            type="email"
+            placeholder="Enter your email"
+            :class="{ 'input-error': errors.email }"
+            @input="errors.email = ''"
+          />
+          <div v-if="errors.email" class="error-text">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {{ errors.email }}
+          </div>
         </div>
 
         <div class="form-group">
           <label for="password">Password</label>
-          <input id="password" v-model="password" type="password" placeholder="Enter password (min 8 characters)" required minlength="8" />
+          <input
+            id="password"
+            v-model="password"
+            type="password"
+            placeholder="Enter password (min 8 characters)"
+            :class="{ 'input-error': errors.password }"
+            @input="errors.password = ''"
+          />
+          <div v-if="errors.password" class="error-text">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {{ errors.password }}
+          </div>
         </div>
 
         <div class="form-group">
@@ -30,18 +69,21 @@
             v-model="passwordConfirmation"
             type="password"
             placeholder="Confirm your password"
-            required
+            :class="{ 'input-error': errors.passwordConfirmation }"
+            @input="errors.passwordConfirmation = ''"
           />
-        </div>
-
-        <div v-if="password && passwordConfirmation && password !== passwordConfirmation" class="warning-message">
-          Passwords do not match!
+          <div v-if="errors.passwordConfirmation" class="error-text">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {{ errors.passwordConfirmation }}
+          </div>
         </div>
 
         <button
           type="submit"
           class="btn-primary"
-          :disabled="authStore.loading || password !== passwordConfirmation"
+          :disabled="authStore.loading"
         >
           {{ authStore.loading ? 'Creating Account...' : 'Register' }}
         </button>
@@ -67,11 +109,38 @@ const name = ref('')
 const email = ref('')
 const password = ref('')
 const passwordConfirmation = ref('')
+const errors = ref({})
+
+const validate = () => {
+  errors.value = {}
+  
+  if (!name.value.trim()) {
+    errors.value.name = 'Name is required'
+  }
+
+  if (!email.value) {
+    errors.value.email = 'Email is required'
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+    errors.value.email = 'Please enter a valid email address'
+  }
+
+  if (!password.value) {
+    errors.value.password = 'Password is required'
+  } else if (password.value.length < 8) {
+    errors.value.password = 'Password must be at least 8 characters'
+  }
+
+  if (!passwordConfirmation.value) {
+    errors.value.passwordConfirmation = 'Please confirm your password'
+  } else if (password.value !== passwordConfirmation.value) {
+    errors.value.passwordConfirmation = 'Passwords do not match'
+  }
+
+  return Object.keys(errors.value).length === 0
+}
 
 const handleRegister = async () => {
-  if (password.value !== passwordConfirmation.value) {
-    return
-  }
+  if (!validate()) return
 
   const result = await authStore.register(
     name.value,
@@ -81,7 +150,7 @@ const handleRegister = async () => {
   )
 
   if (result.success) {
-    router.push('/dashboard')
+    router.push('/todos')
   }
 }
 </script>
